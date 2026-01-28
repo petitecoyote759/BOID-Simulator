@@ -9,10 +9,11 @@ namespace BOIDSimulator
     public static class General
     {
         static GraphicsHandler renderer = null;
-        static List<Boid>[,] boidGrid = new List<Boid>[0,0];
-        static List<Boid> allBoids = new List<Boid>();
+        static List<IBoid>[,] boidGrid = new List<IBoid>[0,0];
+        static List<IBoid> allBoids = new List<IBoid>();
         const int boidGridSize = 100;
-        const int boids = 100;
+        const int boids = 500;
+        const bool leadingBoids = true;
 
         public static void Main(string[] args)
         {
@@ -31,19 +32,27 @@ namespace BOIDSimulator
                 int boidGridh = (renderer.screenheight / boidGridSize) + 1;
 
                 Console.WriteLine($"Width of {boidGridw}x{boidGridh}");
-                boidGrid = new List<Boid>[boidGridw, boidGridh];
+                boidGrid = new List<IBoid>[boidGridw, boidGridh];
                 for (int x = 0; x < boidGridw; x++)
                 {
                     for (int y = 0; y < boidGridh; y++)
                     {
-                        boidGrid[x, y] = new List<Boid>() { };
+                        boidGrid[x, y] = new List<IBoid>() { };
                         //Console.WriteLine($"creating new boid at ({x * boidGridSize}, {y * boidGridSize})");
                     }
                 }
 
                 for (int i = 0; i < boids; i++)
                 {
-                    Boid boid = new Boid(random.Next(renderer.screenwidth), random.Next(renderer.screenheight));
+                    IBoid boid;
+                    if (leadingBoids)
+                    {
+                        boid = new LeadingBoid(random.Next(renderer.screenwidth), random.Next(renderer.screenheight));
+                    }
+                    else
+                    {
+                        boid = new Boid(random.Next(renderer.screenwidth), random.Next(renderer.screenheight));
+                    }
                     boidGrid[0, 0].Add(boid);
                     allBoids.Add(boid);
                 }
@@ -67,19 +76,34 @@ namespace BOIDSimulator
             
             renderer.SetPixel(0, 0, renderer.screenwidth, renderer.screenheight, 0, 0, 0);
 
-            foreach (Boid boid in allBoids)
+            foreach (IBoid boid in allBoids)
             {
                 boid.Action(boidGrid, boidGridSize, dt);
 
-                renderer.SetPixel(
-                    (int)(boid.position.X),
-                    (int)(boid.position.Y),
-                    boidSize,
-                    boidSize,
-                    20,
-                    200,
-                    255
-                    );
+                if (boid is LeadingBoid leaderBoid && leaderBoid.leader)
+                {
+                    renderer.SetPixel(
+                        (int)(boid.position.X),
+                        (int)(boid.position.Y),
+                        boidSize * 2,
+                        boidSize * 2,
+                        150,
+                        100,
+                        255
+                        );
+                }
+                else
+                {
+                    renderer.SetPixel(
+                        (int)(boid.position.X),
+                        (int)(boid.position.Y),
+                        boidSize,
+                        boidSize,
+                        20,
+                        200,
+                        255
+                        );
+                }
             }
         }
     }
