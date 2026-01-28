@@ -12,10 +12,12 @@ namespace BOIDSimulator
         public Vector2 position;
         public Vector2 velocity;
 
-        const float coseperationConst = 1f;
-        const float optimalDist = 20f;
+        const float coherenceConst = 0.05f;
+        const float seperationConst = 0.1f;
+        const float optimalDist = 80f;
         const float maxSpeedSquared = maxSpeed * maxSpeed;
-        const float maxSpeed = 20f;
+        const float maxSpeed = 30f;
+        const float alignConst = 0.00f;
 
         public Boid(float x, float y)
         {
@@ -24,11 +26,22 @@ namespace BOIDSimulator
 
         public void Action(List<Boid>[,] boidGrid, int gridSize, float dt)
         {
-            int gridX = (int)(position.X / gridSize);
-            int gridY = (int)(position.Y / gridSize);
+
 
             int width = boidGrid.GetLength(0);
             int height = boidGrid.GetLength(1);
+
+
+
+            if (position.X == float.NaN || position.Y == float.NaN)
+            {
+                Random random = new Random();
+                position = new Vector2(random.Next(width * gridSize), random.Next(height * gridSize));
+            }
+
+            int gridX = (int)(position.X / gridSize);
+            int gridY = (int)(position.Y / gridSize);
+
 
             // Coherence and Seperation
             RunCoherence(boidGrid[gridX, gridY], dt, true);
@@ -51,9 +64,9 @@ namespace BOIDSimulator
             }
 
             position += dt * velocity;
-            if (position.X < 0) { position.X = width * gridSize - 1f; }
+            if (position.X < 0) { position.X = (width - 1f) * gridSize; }
             if (position.X > width * gridSize) { position.X = 0; }
-            if (position.Y < 0) { position.Y = height * gridSize - 1f; }
+            if (position.Y < 0) { position.Y = (height -1f) * gridSize; }
             if (position.Y > height * gridSize) { position.Y = 0; }
 
             boidGrid[gridX, gridY].Remove(this);
@@ -77,31 +90,41 @@ namespace BOIDSimulator
                     if (boid == this) { continue; }
                 }
 
-                // negative is to the left / counter clockwise
-
-                /*
-                int direction = MathF.Sign(Vector2.Dot(modifiedVelocity, position - boid.position));
-
-                float angleModifier = direction * coseperationConst * MathF.Log2((position - boid.position).LengthSquared() / optimalDist);
-
-                velocity = new Vector2(
-                    (velocity.X * MathF.Cos(angleModifier)) - (velocity.Y * MathF.Sin(angleModifier)),
-                    (velocity.X * MathF.Sin(angleModifier)) + (velocity.Y * MathF.Cos(angleModifier))
-                    );
-                */
-                float distScale = 0f;
-                if ((position - boid.position).LengthSquared() < 0.01f) 
+                Vector2 deltaPosition = Vector2.Normalize(boid.position - position);
+                if (float.IsNaN(deltaPosition.X) || float.IsNaN(deltaPosition.Y)) 
                 {
-                    //Console.WriteLine("too close");
-                    distScale = 1000f; 
+                    deltaPosition = Vector2.Normalize(boid.position - position + new Vector2(1, 1));
                 }
-                else 
-                { 
-                    distScale = dt * coseperationConst * MathF.Log2((position - boid.position).LengthSquared() / optimalDist); 
+                float dot = Vector2.Dot(deltaPosition, velocity);
+                if (dot < -0.1f)
+                {
+                    deltaPosition /= -float.Min((1/-dot)+0.2f, 0.2f);
                 }
 
-                velocity += distScale * (boid.position - position);
-                //Console.WriteLine($"{distScale}, {(boid.position - position).Length()}, ({velocity.X}, {velocity.Y})");
+
+                // Coherence
+
+                velocity += coherenceConst * deltaPosition;
+                //.WriteLine($"Coh {GetVectStr(coherenceConst * deltaPosition)}");
+
+
+                // Seperation
+
+                float seperationScale = seperationConst - ((seperationConst / optimalDist) * (boid.position - position).Length());
+
+                velocity -= seperationScale * deltaPosition;
+
+
+
+                // Alignment
+
+                float alignScale = alignConst - ((alignConst / optimalDist) * (boid.position - position).Length());
+                //Console.WriteLine(alignScale);
+
+                if (velocity.LengthSquared() > 2f)
+                { 
+                velocity = (velocity * (1 - alignScale)) + (boid.velocity * alignScale);
+                }
             }
 
 
@@ -111,5 +134,13 @@ namespace BOIDSimulator
             }
         }
 
+
+
+
+
+        public static string GetVectStr(Vector2 vect)
+        {
+            return $"({vect.X}, {vect.Y})";
+        }
     }
 }

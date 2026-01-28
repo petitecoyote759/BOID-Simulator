@@ -12,9 +12,12 @@ namespace BOIDSimulator
         static List<Boid>[,] boidGrid = new List<Boid>[0,0];
         static List<Boid> allBoids = new List<Boid>();
         const int boidGridSize = 100;
+        const int boids = 100;
 
         public static void Main(string[] args)
         {
+            Random random = new Random();
+
             using (renderer = new GraphicsHandler(1920, 1080,
                render: Render,
                flags: RendererFlag.OutputToTerminal))
@@ -33,11 +36,19 @@ namespace BOIDSimulator
                 {
                     for (int y = 0; y < boidGridh; y++)
                     {
-                        boidGrid[x, y] = new List<Boid>() { new Boid(x * boidGridSize, y * boidGridSize) };
-                        allBoids.Add(boidGrid[x, y].First());
+                        boidGrid[x, y] = new List<Boid>() { };
                         //Console.WriteLine($"creating new boid at ({x * boidGridSize}, {y * boidGridSize})");
                     }
                 }
+
+                for (int i = 0; i < boids; i++)
+                {
+                    Boid boid = new Boid(random.Next(renderer.screenwidth), random.Next(renderer.screenheight));
+                    boidGrid[0, 0].Add(boid);
+                    allBoids.Add(boid);
+                }
+
+
 
                 renderer.Resume();
 
