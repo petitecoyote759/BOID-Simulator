@@ -10,6 +10,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="ShortTools.Perlin" Version="1.0.1" />
+    <PackageReference Include="Short_Tools" Version="1.0.20" />
     <PackageReference Include="SimpleGraphicsLib" Version="1.0.3.3" />
   </ItemGroup>
 
