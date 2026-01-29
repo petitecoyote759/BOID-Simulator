@@ -1,8 +1,9 @@
-﻿using System.Numerics;
+﻿using ShortTools.Perlin;
+using SimpleGraphicsLib;
+using System;
+using System.Numerics;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using ShortTools.Perlin;
-using SimpleGraphicsLib;
 
 
 
@@ -13,8 +14,8 @@ namespace BOIDSimulator
         static GraphicsHandler renderer = null;
         static List<IBoid>[,] boidGrid = new List<IBoid>[0,0];
         public static List<IBoid> allBoids = new List<IBoid>();
-        public const int boidGridSize = 100;
-        const int boids = 100;
+        public const int boidGridSize = 500;
+        const int boids = 1000;
         const bool leadingBoids = true;
         public static bool[,] map;
 
@@ -60,26 +61,49 @@ namespace BOIDSimulator
                     }
                 }
 
-                for (int i = 0; i < boids; i++)
-                {
-                    IBoid boid;
-                    if (leadingBoids)
-                    {
-                        boid = new LeadingBoid(random.Next(renderer.screenwidth), random.Next(renderer.screenheight));
-                    }
-                    else
-                    {
-                        boid = new Boid(random.Next(renderer.screenwidth), random.Next(renderer.screenheight));
-                    }
-                    boidGrid[0, 0].Add(boid);
-                    allBoids.Add(boid);
-                }
-                Console.WriteLine("\n\n\n\nCOMPLETED LOOP\n\n\n\n\n");
+                AddBoids(random);
+
 
                 starting = false;
                 renderer.Resume();
 
-                Console.ReadLine();
+                string input = "";
+                while (input != "Q")
+                {
+                    input = Console.ReadLine()?.ToUpperInvariant() ?? "";
+                    if (input == "RESET")
+                    {
+                        for (int x = 0; x < boidGridw; x++)
+                        {
+                            for (int y = 0; y < boidGridh; y++)
+                            {
+                                boidGrid[x, y] = new List<IBoid>();
+                            }
+                        }
+                        allBoids = new List<IBoid>();
+                        AddBoids(random);
+                    }
+                }
+            }
+        }
+
+
+
+        private static void AddBoids(Random random)
+        {
+            for (int i = 0; i < boids; i++)
+            {
+                IBoid boid;
+                if (leadingBoids)
+                {
+                    boid = new LeadingBoid(random.Next(renderer.screenwidth), random.Next(renderer.screenheight));
+                }
+                else
+                {
+                    boid = new Boid(random.Next(renderer.screenwidth), random.Next(renderer.screenheight));
+                }
+                boidGrid[(int)(boid.position.X / boidGridSize), (int)(boid.position.Y / boidGridSize)].Add(boid);
+                allBoids.Add(boid);
             }
         }
 
@@ -130,8 +154,8 @@ namespace BOIDSimulator
                     renderer.SetPixel(
                         (int)(boid.position.X),
                         (int)(boid.position.Y),
-                        boidSize * 2,
-                        boidSize * 2,
+                        boidSize * 4,
+                        boidSize * 4,
                         150,
                         100,
                         255
@@ -144,9 +168,9 @@ namespace BOIDSimulator
                         (int)(boid.position.Y),
                         boidSize,
                         boidSize,
-                        20,
+                        255,
                         200,
-                        255
+                        100
                         );
                 }
             }
