@@ -10,8 +10,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="ShortTools.AStar" Version="1.0.0" />
+    <PackageReference Include="ShortTools.MagicContainer" Version="1.0.3" />
     <PackageReference Include="ShortTools.Perlin" Version="1.0.1" />
-    <PackageReference Include="Short_Tools" Version="1.0.20" />
+    <PackageReference Include="ShortTools2" Version="1.0.0" />
     <PackageReference Include="SimpleGraphicsLib" Version="1.0.3.3" />
   </ItemGroup>
 

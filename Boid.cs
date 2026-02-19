@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using ShortTools.MagicContainer;
 using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace BOIDSimulator
 {
@@ -26,7 +22,7 @@ namespace BOIDSimulator
             position = new Vector2(x, y);
         }
 
-        public void Action(List<IBoid>[,] boidGrid, int gridSize, float dt)
+        public void Action(SMContainer<IBoid>[][] boidGrid, int gridSize, float dt)
         {
 
             int width = boidGrid.GetLength(0);
@@ -45,40 +41,40 @@ namespace BOIDSimulator
 
 
             // Coherence and Seperation
-            RunCoherence(boidGrid[gridX, gridY], dt, true);
+            RunCoherence(boidGrid[gridX][gridY], dt, true);
 
 
             if (gridX < width - 1)
             {
-                RunCoherence(boidGrid[gridX + 1, gridY], dt);
+                RunCoherence(boidGrid[gridX + 1][gridY], dt);
                 if (gridY > 0)
                 {
-                    RunCoherence(boidGrid[gridX + 1, gridY - 1], dt);
+                    RunCoherence(boidGrid[gridX + 1][gridY - 1], dt);
                 }
                 else if (gridY < height - 1)
                 {
-                    RunCoherence(boidGrid[gridX + 1, gridY + 1], dt);
+                    RunCoherence(boidGrid[gridX + 1][gridY + 1], dt);
                 }
             }
             if (gridX > 0)
             {
-                RunCoherence(boidGrid[gridX - 1, gridY], dt);
+                RunCoherence(boidGrid[gridX - 1][gridY], dt);
                 if (gridY > 0)
                 {
-                    RunCoherence(boidGrid[gridX - 1, gridY - 1], dt);
+                    RunCoherence(boidGrid[gridX - 1][gridY - 1], dt);
                 }
                 else if (gridY < height - 1)
                 {
-                    RunCoherence(boidGrid[gridX - 1, gridY + 1], dt);
+                    RunCoherence(boidGrid[gridX - 1][gridY + 1], dt);
                 }
             }
             if (gridY < height - 1)
             {
-                RunCoherence(boidGrid[gridX, gridY + 1], dt);
+                RunCoherence(boidGrid[gridX][gridY + 1], dt);
             }
             if (gridY > 0)
             {
-                RunCoherence(boidGrid[gridX, gridY - 1], dt);
+                RunCoherence(boidGrid[gridX][gridY - 1], dt);
             }
 
             position += dt * velocity;
@@ -87,17 +83,17 @@ namespace BOIDSimulator
             if (position.Y < 0) { position = new Vector2(position.X, (height -1f) * gridSize); }
             if (position.Y > height * gridSize) { position = new Vector2(0); }
 
-            boidGrid[gridX, gridY].Remove(this);
+            boidGrid[gridX][gridY].Remove(this);
 
             gridX = (int)(position.X / gridSize);
             gridY = (int)(position.Y / gridSize);
 
-            boidGrid[gridX, gridY].Add(this);
+            boidGrid[gridX][gridY].Add(this);
         }
 
 
 
-        private void RunCoherence(List<IBoid> boids, float dt, bool currentGrid = false)
+        private void RunCoherence(SMContainer<IBoid> boids, float dt, bool currentGrid = false)
         {
             Vector2 modifiedVelocity = new Vector2(velocity.Y, -velocity.X);
 

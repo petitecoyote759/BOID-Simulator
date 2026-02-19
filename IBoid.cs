@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using ShortTools.MagicContainer;
 using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace BOIDSimulator
 {
@@ -12,6 +8,12 @@ namespace BOIDSimulator
         public Vector2 position { get; set; }
         public Vector2 velocity { get; set; }
 
-        public void Action(List<IBoid>[,] boidGrid, int gridSize, float dt);
+        public void Action(SMContainer<IBoid>[][] boidGrid, int gridSize, float dt);
+    }
+
+
+    public interface ILeadable
+    {
+        public bool Leader { get; }
     }
 }

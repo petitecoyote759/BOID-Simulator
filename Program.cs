@@ -1,10 +1,6 @@
-﻿using ShortTools.Perlin;
+﻿using ShortTools.MagicContainer;
 using SimpleGraphicsLib;
-using System;
-using System.Numerics;
-using System.Reflection;
-using System.Runtime.InteropServices;
-
+using static ShortTools.General.Prints;
 
 
 namespace BOIDSimulator
@@ -12,19 +8,40 @@ namespace BOIDSimulator
     public static class General
     {
         static GraphicsHandler renderer = null;
-        static List<IBoid>[,] boidGrid = new List<IBoid>[0,0];
-        public static List<IBoid> allBoids = new List<IBoid>();
-        public const int boidGridSize = 500;
-        const int boids = 1000;
+        static SMContainer<IBoid>[][] boidGrid = new SMContainer<IBoid>[0][];
+        public static SMContainer<IBoid> allBoids = new SMContainer<IBoid>();
+        public const int boidGridSize = 32;
+        const int boids = 20;
         const bool leadingBoids = true;
-        public static bool[,] map;
+        public static TileID[][] map;
+
+
+
+
+
+
+        public static bool Walkable(TileID tile)
+        {
+            return tile switch
+            {
+                TileID.Water => false,
+                TileID.Grass => true,
+                TileID.Sand => true,
+                TileID.Forest => true,
+                TileID.Cliff => false,
+                _ => false
+            };
+        }
+
+
+        public const int PPT = 2; // pixels per tile
 
         public static void Main(string[] args)
         {
             Random random = new Random();
 
             using (renderer = new GraphicsHandler(1920, 1080,
-               render: Render,
+               render: (() => { MapRenderer.Render(renderer, map); RenderBoids(); }),//Render,
                flags: RendererFlag.OutputToTerminal))
             {
                 Console.WriteLine("Starting Perlin Demo");
@@ -32,31 +49,21 @@ namespace BOIDSimulator
 
                 renderer.Pause();
 
-                map = new bool[renderer.screenwidth, renderer.screenheight];
-                float[,] perlinMap = Perlin.GeneratePerlinMap(renderer.screenwidth, renderer.screenheight, 16);
-                for (int x = 0; x < renderer.screenwidth; x++)
-                {
-                    for (int y = 0; y < renderer.screenheight; y++)
-                    {
-                        if (x < 10 || x >= renderer.screenwidth - 10) { map[x, y] = false; continue; }
-                        if (y < 10 || y >= renderer.screenheight - 10) { map[x, y] = false; continue; }
-
-                        map[x, y] = perlinMap[x, y] < 0.5f;
-                    }
-                }
+                map = MapRenderer.CreateMap(renderer.screenwidth / PPT, renderer.screenheight / PPT);
 
 
 
-                int boidGridw = (renderer.screenwidth / boidGridSize) + 1;
-                int boidGridh = (renderer.screenheight / boidGridSize) + 1;
+                int boidGridw = (renderer.screenwidth / (boidGridSize * PPT)) + 1;
+                int boidGridh = (renderer.screenheight / (boidGridSize * PPT)) + 1;
 
                 Console.WriteLine($"Width of {boidGridw}x{boidGridh}");
-                boidGrid = new List<IBoid>[boidGridw, boidGridh];
+                boidGrid = new SMContainer<IBoid>[boidGridw][];
                 for (int x = 0; x < boidGridw; x++)
                 {
+                    boidGrid[x] = new SMContainer<IBoid>[boidGridh];
                     for (int y = 0; y < boidGridh; y++)
                     {
-                        boidGrid[x, y] = new List<IBoid>() { };
+                        boidGrid[x][y] = new SMContainer<IBoid>() { };
                         //Console.WriteLine($"creating new boid at ({x * boidGridSize}, {y * boidGridSize})");
                     }
                 }
@@ -77,10 +84,10 @@ namespace BOIDSimulator
                         {
                             for (int y = 0; y < boidGridh; y++)
                             {
-                                boidGrid[x, y] = new List<IBoid>();
+                                boidGrid[x][y] = new SMContainer<IBoid>();
                             }
                         }
-                        allBoids = new List<IBoid>();
+                        allBoids = new SMContainer<IBoid>();
                         AddBoids(random);
                     }
                 }
@@ -93,17 +100,7 @@ namespace BOIDSimulator
         {
             for (int i = 0; i < boids; i++)
             {
-                IBoid boid;
-                if (leadingBoids)
-                {
-                    boid = new LeadingBoid(random.Next(renderer.screenwidth), random.Next(renderer.screenheight));
-                }
-                else
-                {
-                    boid = new Boid(random.Next(renderer.screenwidth), random.Next(renderer.screenheight));
-                }
-                boidGrid[(int)(boid.position.X / boidGridSize), (int)(boid.position.Y / boidGridSize)].Add(boid);
-                allBoids.Add(boid);
+                AddBoid();
             }
         }
 
@@ -113,49 +110,68 @@ namespace BOIDSimulator
         const int boidSize = 2;
         static readonly float dt = 1f / 60f;
         static bool starting = true;
-        private static void Render()
-        {
-            if (starting) { return; }
-            if (boidGrid is null) { Console.WriteLine("Breaking"); return; }
 
-            int currentBoids = allBoids.Count;
-            Random random = new Random();
+
+        private static void AddBoid()
+        {
+            int position = random.Next(0, 4); // 0-3, going NESW
+
+            int x = 0;
+            int y = 0;
+
+            if (position == 0) { y = (renderer.screenheight / PPT) - 1; x = random.Next(0, renderer.screenwidth / PPT); } // north
+            if (position == 1) { y = random.Next(renderer.screenheight / PPT); x = (renderer.screenwidth / PPT) - 1; } // east
+            if (position == 2) { y = 1; x = random.Next(0, renderer.screenwidth / PPT); } // south
+            if (position == 3) { y = random.Next(0, renderer.screenheight / PPT); x = 1; } // west
+
+            IBoid boid;
+            if (leadingBoids)
+            {
+                boid = new NaturioBoid(x, y);
+            }
+            else
+            {
+                boid = new Boid(x, y);
+            }
+
+            int boidGridIndex = boidGrid[(int)(boid.position.X / boidGridSize)][(int)(boid.position.Y / boidGridSize)].Add(boid);
+            int allBoidsIndex = allBoids.Add(boid);
+
+            if (boid is NaturioBoid nBoid)
+            {
+                nBoid.SetIndexes(allBoidsIndex, boidGridIndex);
+            }
+        }
+
+
+
+
+
+
+
+        static Random random = new Random();
+        private static void RenderBoids()
+        {
+            if (boidGrid is null || map is null) { return; }
+
+            int currentBoids = allBoids.Length;
             for (int i = 0; i < boids - currentBoids; i++)
             {
-                allBoids.Add(new LeadingBoid(renderer.screenwidth - LeadingBoid.killZone, random.Next(LeadingBoid.killZone, renderer.screenheight - LeadingBoid.killZone)));
+                AddBoid();
             }
 
+           
 
-            
-            for (int x = 0; x < renderer.screenwidth; x++)
-            {
-                for (int y = 0; y < renderer.screenheight; y++)
-                {
-                    byte r = 0;
-                    byte g = 0;
-                    byte b = 0;
-
-                    if (!map[x, y]) // not walkable
-                    {
-                        r = 50; g = 50; b = 50;
-                    }
-
-                    renderer.SetPixel(x, y, 1, 1, r, g, b);
-                }
-            }
-
-            IBoid[] allBoidArray = allBoids.ToArray();
-            foreach (IBoid boid in allBoidArray)
+            foreach (IBoid boid in allBoids)
             {
                 boid.Action(boidGrid, boidGridSize, dt);
-
-                if (boid is LeadingBoid leaderBoid && leaderBoid.leader)
+                if (boid is ILeadable leaderBoid && leaderBoid.Leader)
                 {
                     renderer.SetPixel(
-                        (int)(boid.position.X),
-                        (int)(boid.position.Y),
-                        boidSize * 4,
-                        boidSize * 4,
+                        (int)((boid.position.X - (boidSize * 2)) * PPT),
+                        (int)((boid.position.Y - (boidSize * 2)) * PPT),
+                        boidSize * 4 * PPT,
+                        boidSize * 4 * PPT,
                         150,
                         100,
                         255
@@ -164,10 +180,10 @@ namespace BOIDSimulator
                 else
                 {
                     renderer.SetPixel(
-                        (int)(boid.position.X),
-                        (int)(boid.position.Y),
-                        boidSize,
-                        boidSize,
+                        (int)(boid.position.X * PPT),
+                        (int)(boid.position.Y * PPT),
+                        boidSize * PPT,
+                        boidSize * PPT,
                         255,
                         200,
                         100
