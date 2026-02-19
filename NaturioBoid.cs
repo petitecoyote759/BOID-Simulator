@@ -122,8 +122,11 @@ namespace BOIDSimulator
 
             int leaderCount = CountLeaders(boidGrid);
 
+            
+
             if (!leader && leaderCount < leaderDensityMin)
             {
+                Console.WriteLine($"Becoming Leader (count {leaderCount}) At coords {position} time {DateTimeOffset.Now.ToUnixTimeMilliseconds()}");
                 this.leader = true;
             }
             else if (leader && leaderCount > leaderDensityMax)
@@ -212,6 +215,7 @@ namespace BOIDSimulator
 
                 foreach (IBoid boid in boidGrid[targetGridX][targetGridY])
                 {
+                    if (boid == this) { continue; }
                     if (boid is ILeadable leadableBoid && leadableBoid.Leader == true)
                     {
                         leaderCount++;
