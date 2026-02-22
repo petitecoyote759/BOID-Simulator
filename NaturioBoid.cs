@@ -15,12 +15,12 @@ namespace BOIDSimulator
     {
         // <<Class Settings>> //
 
-        const float leaderSpeed = 5f; // blocks per second
+        const float leaderSpeed = 20f; // blocks per second
 
         const float destroyZoneRadius = 10f; // how many blocks around the centre are the "kill zone", meaning the BOIDS will be deleted
 
         const int leaderDensityMin = 2; // If the leaders in a 3x3 area is less than this, then they will self promote,
-        const int leaderDensityMax = 4; // however if over this value, it will stop being a leader
+        const int leaderDensityMax = 3; // however if over this value, it will stop being a leader
 
 
 
@@ -77,10 +77,10 @@ namespace BOIDSimulator
             tileX = (int)x; tileY = (int)y;
         }
 
-        public void SetIndexes(int allBoidsIndex, int boidGridIndex)
+        public void SetIndexes(int? allBoidsIndex = null, int? boidGridIndex = null)
         {
-            this.allBoidsIndex = allBoidsIndex;
-            this.boidGridIndex = boidGridIndex;
+            this.allBoidsIndex = allBoidsIndex ?? this.allBoidsIndex;
+            this.boidGridIndex = boidGridIndex ?? this.boidGridIndex;
         }
 
 
@@ -102,7 +102,11 @@ namespace BOIDSimulator
 
             // <<Update Positions>> //
             
-            _ = boidGrid[gridX][gridY].RemoveAt(boidGridIndex);
+            bool success = boidGrid[gridX][gridY].Remove(this);
+            if (!success)
+            {
+                Console.WriteLine("Could not remove, ruh roh");
+            }
             gridX = (int)(position.X / General.boidGridSize);
             gridY = (int)(position.Y / General.boidGridSize);
             boidGridIndex = boidGrid[gridX][gridY].Add(this);
@@ -123,15 +127,16 @@ namespace BOIDSimulator
             int leaderCount = CountLeaders(boidGrid);
 
             
-
             if (!leader && leaderCount < leaderDensityMin)
             {
-                Console.WriteLine($"Becoming Leader (count {leaderCount}) At coords {position} time {DateTimeOffset.Now.ToUnixTimeMilliseconds()}");
+                //Console.WriteLine($"Becoming Leader (count {leaderCount}) At coords {position} Grid ({gridX}x{gridY}) " +
+                //    $"should be ({(int)(position.X / General.boidGridSize)}x{(int)(position.Y / General.boidGridSize)}) time {DateTimeOffset.Now.ToUnixTimeMilliseconds()}");
                 this.leader = true;
             }
             else if (leader && leaderCount > leaderDensityMax)
             {
-                Console.WriteLine($"Becoming Follower (count {leaderCount}) At coords {position} time {DateTimeOffset.Now.ToUnixTimeMilliseconds()}");
+                //Console.WriteLine($"Becoming Follower (count {leaderCount}) At coords {position} Grid ({gridX}x{gridY}) " +
+                //    $"should be ({(int)(position.X / General.boidGridSize)}x{(int)(position.Y / General.boidGridSize)}) time {DateTimeOffset.Now.ToUnixTimeMilliseconds()}");
                 this.leader = false;
             }
         }
@@ -198,7 +203,10 @@ namespace BOIDSimulator
         // <<Misc Functions>> //
 
         // All grids nearby
-        private static readonly (int, int)[] gridChecks = new (int, int)[] { (-1, -1), (0, -1), (1, -1), (-1, 0), (0, 0), (1, 0), (-1, 1), (0, 1), (1, 1) };
+        private static readonly (int, int)[] gridChecks = new (int, int)[] { 
+            (-1, -1), (0, -1), (1, -1), 
+            (-1,  0), (0,  0), (1,  0), 
+            (-1,  1), (0,  1), (1,  1) };
         private int CountLeaders(SMContainer<IBoid>[][] boidGrid)
         {
             int leaderCount = 0;
@@ -218,6 +226,11 @@ namespace BOIDSimulator
                     if (boid == this) { continue; }
                     if (boid is ILeadable leadableBoid && leadableBoid.Leader == true)
                     {
+                        if ((int)(boid.position.X / General.boidGridSize) != targetGridX || (int)(boid.position.Y / General.boidGridSize) != targetGridY)
+                        {
+                            Console.WriteLine($"Issue, boid is at incorrect position. Grid ({targetGridX}x{targetGridY}) " +
+                    $"should be ({(int)(boid.position.X / General.boidGridSize)}x{(int)(boid.position.Y / General.boidGridSize)})");
+                        }
                         leaderCount++;
                     }
                 }
@@ -229,7 +242,7 @@ namespace BOIDSimulator
         private void DestroySelf(SMContainer<IBoid>[][] boidGrid)
         {
             _ = General.allBoids.RemoveAt(allBoidsIndex);
-            _ = boidGrid[gridX][gridY].RemoveAt(boidGridIndex);
+            _ = boidGrid[gridX][gridY].Remove(this);
         }
         private static bool Walkable(int x, int y)
         {

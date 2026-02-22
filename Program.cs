@@ -162,8 +162,11 @@ namespace BOIDSimulator
 
            
 
-            foreach (IBoid boid in allBoids)
+            for (int i = 0; i < allBoids.Length; i++)
             {
+                IBoid boid = allBoids[i];
+
+                if (boid is NaturioBoid nBoid) { nBoid.SetIndexes(allBoidsIndex: i); }
                 boid.Action(boidGrid, boidGridSize, dt);
                 if (boid is ILeadable leaderBoid && leaderBoid.Leader)
                 {
