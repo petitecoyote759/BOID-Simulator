@@ -228,8 +228,8 @@ namespace BOIDSimulator
                     {
                         if ((int)(boid.position.X / General.boidGridSize) != targetGridX || (int)(boid.position.Y / General.boidGridSize) != targetGridY)
                         {
-                            Console.WriteLine($"Issue, boid is at incorrect position. Grid ({targetGridX}x{targetGridY}) " +
-                    $"should be ({(int)(boid.position.X / General.boidGridSize)}x{(int)(boid.position.Y / General.boidGridSize)})");
+                            //Console.WriteLine($"Issue, boid is at incorrect position. Grid ({targetGridX}x{targetGridY}) " +
+                            //    $"should be ({(int)(boid.position.X / General.boidGridSize)}x{(int)(boid.position.Y / General.boidGridSize)})");
                         }
                         leaderCount++;
                     }

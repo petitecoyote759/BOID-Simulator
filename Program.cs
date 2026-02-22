@@ -90,6 +90,10 @@ namespace BOIDSimulator
                         allBoids = new SMContainer<IBoid>();
                         AddBoids(random);
                     }
+                    else if (input == "SR") // Switch Render
+                    {
+                        gridRender = !gridRender;
+                    }
                 }
             }
         }
@@ -148,7 +152,7 @@ namespace BOIDSimulator
 
 
 
-
+        static bool gridRender = false;
         static Random random = new Random();
         private static void RenderBoids()
         {
@@ -160,38 +164,58 @@ namespace BOIDSimulator
                 AddBoid();
             }
 
-           
 
-            for (int i = 0; i < allBoids.Length; i++)
+            if (gridRender)
             {
-                IBoid boid = allBoids[i];
+                for (int x = 0; x < boidGrid.Length; x++)
+                {
+                    for (int y = 0; y < boidGrid[0].Length; y++)
+                    {
+                        foreach (IBoid boid in boidGrid[x][y])
+                        {
+                            RenderBoid(boid);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                for (int i = 0; i < allBoids.Length; i++)
+                {
+                    IBoid boid = allBoids[i];
+                    if (boid is NaturioBoid nBoid) { nBoid.SetIndexes(allBoidsIndex: i); }
+                    RenderBoid(boid);
+                }
+            }
+        }
 
-                if (boid is NaturioBoid nBoid) { nBoid.SetIndexes(allBoidsIndex: i); }
-                boid.Action(boidGrid, boidGridSize, dt);
-                if (boid is ILeadable leaderBoid && leaderBoid.Leader)
-                {
-                    renderer.SetPixel(
-                        (int)((boid.position.X - (boidSize * 2)) * PPT),
-                        (int)((boid.position.Y - (boidSize * 2)) * PPT),
-                        boidSize * 4 * PPT,
-                        boidSize * 4 * PPT,
-                        150,
-                        100,
-                        255
-                        );
-                }
-                else
-                {
-                    renderer.SetPixel(
-                        (int)(boid.position.X * PPT),
-                        (int)(boid.position.Y * PPT),
-                        boidSize * PPT,
-                        boidSize * PPT,
-                        255,
-                        200,
-                        100
-                        );
-                }
+
+        private static void RenderBoid(IBoid boid)
+        {
+            boid.Action(boidGrid, boidGridSize, dt);
+            if (boid is ILeadable leaderBoid && leaderBoid.Leader)
+            {
+                renderer.SetPixel(
+                    (int)((boid.position.X - (boidSize * 2)) * PPT),
+                    (int)((boid.position.Y - (boidSize * 2)) * PPT),
+                    boidSize * 4 * PPT,
+                    boidSize * 4 * PPT,
+                    150,
+                    100,
+                    255
+                    );
+            }
+            else
+            {
+                renderer.SetPixel(
+                    (int)(boid.position.X * PPT),
+                    (int)(boid.position.Y * PPT),
+                    boidSize * PPT,
+                    boidSize * PPT,
+                    255,
+                    200,
+                    100
+                    );
             }
         }
     }
