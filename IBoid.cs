@@ -1,6 +1,7 @@
 ﻿using ShortTools.MagicContainer;
 using System.Numerics;
 
+
 namespace BOIDSimulator
 {
     public interface IBoid
