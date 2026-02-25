@@ -207,7 +207,7 @@ namespace BOIDSimulator
                     {
                         foreach (IBoid boid in boidGrid[x][y])
                         {
-                            RenderBoid(boid);
+                            RenderBoid(boid, x, y);
                         }
                     }
                 }
@@ -222,13 +222,15 @@ namespace BOIDSimulator
         }
 
 
-        private static void RenderBoid(IBoid boid)
+        private static void RenderBoid(IBoid boid, int? gridX = null, int? gridY = null)
         {
             if (highlight && boid is NaturioBoid nBoid)
             {
+                gridX ??= nBoid.gridX;
+                gridY ??= nBoid.gridY;
                 renderer.SetPixel(
-                    nBoid.gridX * boidGridSize * PPT,
-                    nBoid.gridY * boidGridSize * PPT,
+                    gridX.Value * boidGridSize * PPT,
+                    gridY.Value * boidGridSize * PPT,
                     boidGridSize * PPT,
                     boidGridSize * PPT,
                     0,

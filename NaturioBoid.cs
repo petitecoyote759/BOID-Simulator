@@ -90,6 +90,21 @@ namespace BOIDSimulator
 
         public void Action(SMContainer<IBoid>[][] boidGrid, int gridSize, float dt)
         {
+            for (int x = 0; x < boidGrid.Length; x++)
+            {
+                for (int y = 0; y < boidGrid[0].Length; y++)
+                {
+                    if (x == gridX && y == gridY) { continue; }
+                    if (boidGrid[x][y].Contains(this))
+                    {
+                        //Console.WriteLine($"Found myself in another grid! strange... At <{gridX},{gridY}> Found <{x},{y}>");
+                    }
+                }
+            }
+
+
+
+
             // 2 options, leader or not.
             if (leader)
             {
@@ -101,15 +116,16 @@ namespace BOIDSimulator
             }
 
             // <<Update Positions>> //
-            
-            bool success = boidGrid[gridX][gridY].Remove(this);
-            if (!success)
-            {
-                //Console.WriteLine("Could not remove, ruh roh");
-            }
+
+            int oldGridX = gridX;
+            int oldGridY = gridY;
             gridX = (int)(position.X / General.boidGridSize);
             gridY = (int)(position.Y / General.boidGridSize);
-            boidGridIndex = boidGrid[gridX][gridY].Add(this);
+            if (oldGridX != gridX || oldGridY != gridY)
+            {
+                _ = boidGrid[oldGridX][oldGridY].Remove(this);
+                boidGridIndex = boidGrid[gridX][gridY].Add(this);
+            }
 
             tileX = (int)position.X; tileY = (int)position.Y;
 
@@ -211,6 +227,7 @@ namespace BOIDSimulator
         {
             int leaderCount = 0;
 
+
             foreach ((int, int) gridRCoords in gridChecks)
             {
                 // gridRCoords -> grid relative coordinates, just add them and check that grid
@@ -226,11 +243,6 @@ namespace BOIDSimulator
                     if (boid == this) { continue; }
                     if (boid is ILeadable leadableBoid && leadableBoid.Leader == true)
                     {
-                        if ((int)(boid.position.X / General.boidGridSize) != targetGridX || (int)(boid.position.Y / General.boidGridSize) != targetGridY)
-                        {
-                            //Console.WriteLine($"Issue, boid is at incorrect position. Grid ({targetGridX}x{targetGridY}) " +
-                            //    $"should be ({(int)(boid.position.X / General.boidGridSize)}x{(int)(boid.position.Y / General.boidGridSize)})");
-                        }
                         leaderCount++;
                     }
                 }
@@ -242,7 +254,22 @@ namespace BOIDSimulator
         private void DestroySelf(SMContainer<IBoid>[][] boidGrid)
         {
             _ = General.allBoids.Remove(this);
-            _ = boidGrid[gridX][gridY].Remove(this);
+            bool success = boidGrid[gridX][gridY].Remove(this);
+            if (!success)
+            {
+                Console.WriteLine($"Tried to destroy self at {gridX}x{gridY} but failed");
+                for (int x = 0; x < boidGrid.Length; x++)
+                {
+                    for (int y = 0; y < boidGrid[0].Length; y++)
+                    {
+                        if (x == gridX && y == gridY) { continue; }
+                        if (boidGrid[x][y].Contains(this))
+                        {
+                            Console.WriteLine($"Found at {x}x{y}");
+                        }
+                    }
+                }
+            }
         }
         private static bool Walkable(int x, int y)
         {
