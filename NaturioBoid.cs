@@ -47,8 +47,8 @@ namespace BOIDSimulator
 
 
         const float alignmentConst = 0.2f;
-        const int blockCheckRange = 4;
-        const float seperationConst = 1f;
+        const int blockCheckRange = 6;
+        const float seperationConst = 0.4f;
 
 
 
@@ -345,7 +345,7 @@ namespace BOIDSimulator
         private void FollowerFollow(List<IBoid>[][] boidGrid, int gridSize, float dt)
         {
             // <<Get Leader>> //
-            if (currentLeader is null || DateTimeOffset.Now.ToUnixTimeMilliseconds() - leaderFollowStartTime > minLeaderFollowDuration)
+            if (currentLeader is null || currentLeader.leader == false || DateTimeOffset.Now.ToUnixTimeMilliseconds() - leaderFollowStartTime > minLeaderFollowDuration)
             {
                 PriorityQueue<IBoid, float> leaderQueue = new PriorityQueue<IBoid, float>();
 
@@ -468,6 +468,7 @@ namespace BOIDSimulator
             }
             _ = General.allBoids.Remove(this);
             _ = boidGrid[gridX][gridY].Remove(this);
+            leader = false;
         }
         private static bool Walkable(int x, int y)
         {

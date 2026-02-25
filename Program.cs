@@ -2,6 +2,8 @@
 using SimpleGraphicsLib;
 using System.Collections.ObjectModel;
 using System.ComponentModel.Design;
+using System.Diagnostics.CodeAnalysis;
+using System.Security.Cryptography;
 using static ShortTools.General.Prints;
 
 
@@ -120,6 +122,11 @@ namespace BOIDSimulator
                         Console.WriteLine(renderLines ? "Hiding Grid Lines" : "Showing Grid Lines");
                         renderLines = !renderLines;
                     }
+                    else if (input == "RR")
+                    {
+                        Console.WriteLine(renderRandom ? "Disabling Render Random" : "Rendering Random");
+                        renderRandom = !renderRandom;
+                    }
                     else if (input == "HELP")
                     {
                         Console.WriteLine("Options:\n\nReset - resets the sim" +
@@ -127,7 +134,8 @@ namespace BOIDSimulator
                             "\npause - pause the movement of the boids" +
                             "\nh - highlight tiles" +
                             "\nsl - switch show leaders" +
-                            "\nrl - switch rendering of grid lines");
+                            "\nrl - switch rendering of grid lines" +
+                            "\nrr - switch render random - renders a random boid");
                     }
                 }
             }
@@ -179,6 +187,8 @@ namespace BOIDSimulator
         static bool paused = false;
         static bool highlight = false;
         static bool showLeaders = true;
+        static bool renderRandom = false;
+        static IBoid? randomBoid = null;
         internal static bool renderLines = false;
         static Random random = new Random();
         private static void RenderBoids()
@@ -201,6 +211,19 @@ namespace BOIDSimulator
                     boid.Action(boidGrid, boidGridSize, dt);
                 }
             }
+
+
+            if (renderRandom)
+            {
+                if (randomBoid is not null) 
+                { 
+                    if (allBoids.Contains(randomBoid) == false) { randomBoid = null; return; }
+                    RenderBoid(randomBoid); 
+                    return;
+                }
+                randomBoid = allBoids[RandomNumberGenerator.GetInt32(0, allBoids.Count)];
+            }
+
 
             if (gridRender)
             {
