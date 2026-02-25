@@ -1,5 +1,6 @@
 ﻿using ShortTools.MagicContainer;
 using SimpleGraphicsLib;
+using System.Collections.ObjectModel;
 using System.ComponentModel.Design;
 using static ShortTools.General.Prints;
 
@@ -11,8 +12,8 @@ namespace BOIDSimulator
         static GraphicsHandler renderer = null;
         static List<IBoid>[][] boidGrid = new List<IBoid>[0][];
         public static List<IBoid> allBoids = new List<IBoid>();
-        public const int boidGridSize = 32;
-        const int boids = 10;
+        public const int boidGridSize = 64;
+        const int boids = 1000;
         const bool leadingBoids = true;
         public static TileID[][] map;
 
@@ -53,7 +54,6 @@ namespace BOIDSimulator
                 map = MapRenderer.CreateMap(renderer.screenwidth / PPT, renderer.screenheight / PPT);
 
 
-
                 int boidGridw = (renderer.screenwidth / (boidGridSize * PPT)) + 1;
                 int boidGridh = (renderer.screenheight / (boidGridSize * PPT)) + 1;
 
@@ -68,6 +68,7 @@ namespace BOIDSimulator
                         //Console.WriteLine($"creating new boid at ({x * boidGridSize}, {y * boidGridSize})");
                     }
                 }
+                NaturioBoid.SetupBoids(boidGrid);
 
                 AddBoids(random);
 
@@ -151,14 +152,7 @@ namespace BOIDSimulator
             if (position == 3) { y = random.Next(0, renderer.screenheight / PPT); x = 1; } // west
 
             IBoid boid;
-            if (leadingBoids)
-            {
-                boid = new NaturioBoid(x, y);
-            }
-            else
-            {
-                boid = new Boid(x, y);
-            }
+            boid = new NaturioBoid(x, y);
 
             boidGrid[(int)(boid.position.X / boidGridSize)][(int)(boid.position.Y / boidGridSize)].Add(boid);
             allBoids.Add(boid);
@@ -171,7 +165,7 @@ namespace BOIDSimulator
 
         static bool gridRender = false;
         static bool paused = false;
-        static bool highlight = true;
+        static bool highlight = false;
         static Random random = new Random();
         private static void RenderBoids()
         {
