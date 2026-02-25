@@ -9,8 +9,8 @@ namespace BOIDSimulator
     public static class General
     {
         static GraphicsHandler renderer = null;
-        static SMContainer<IBoid>[][] boidGrid = new SMContainer<IBoid>[0][];
-        public static SMContainer<IBoid> allBoids = new SMContainer<IBoid>();
+        static List<IBoid>[][] boidGrid = new List<IBoid>[0][];
+        public static List<IBoid> allBoids = new List<IBoid>();
         public const int boidGridSize = 32;
         const int boids = 10;
         const bool leadingBoids = true;
@@ -58,13 +58,13 @@ namespace BOIDSimulator
                 int boidGridh = (renderer.screenheight / (boidGridSize * PPT)) + 1;
 
                 Console.WriteLine($"Width of {boidGridw}x{boidGridh}");
-                boidGrid = new SMContainer<IBoid>[boidGridw][];
+                boidGrid = new List<IBoid>[boidGridw][];
                 for (int x = 0; x < boidGridw; x++)
                 {
-                    boidGrid[x] = new SMContainer<IBoid>[boidGridh];
+                    boidGrid[x] = new List<IBoid>[boidGridh];
                     for (int y = 0; y < boidGridh; y++)
                     {
-                        boidGrid[x][y] = new SMContainer<IBoid>() { };
+                        boidGrid[x][y] = new List<IBoid>() { };
                         //Console.WriteLine($"creating new boid at ({x * boidGridSize}, {y * boidGridSize})");
                     }
                 }
@@ -86,10 +86,10 @@ namespace BOIDSimulator
                         {
                             for (int y = 0; y < boidGridh; y++)
                             {
-                                boidGrid[x][y] = new SMContainer<IBoid>();
+                                boidGrid[x][y] = new List<IBoid>();
                             }
                         }
-                        allBoids = new SMContainer<IBoid>();
+                        allBoids = new List<IBoid>();
                         AddBoids(random);
                         continue;
                     }
@@ -160,13 +160,8 @@ namespace BOIDSimulator
                 boid = new Boid(x, y);
             }
 
-            int boidGridIndex = boidGrid[(int)(boid.position.X / boidGridSize)][(int)(boid.position.Y / boidGridSize)].Add(boid);
-            int allBoidsIndex = allBoids.Add(boid);
-
-            if (boid is NaturioBoid nBoid)
-            {
-                nBoid.SetIndexes(allBoidsIndex, boidGridIndex);
-            }
+            boidGrid[(int)(boid.position.X / boidGridSize)][(int)(boid.position.Y / boidGridSize)].Add(boid);
+            allBoids.Add(boid);
         }
 
 
@@ -182,7 +177,7 @@ namespace BOIDSimulator
         {
             if (boidGrid is null || map is null) { return; }
 
-            int currentBoids = allBoids.Length;
+            int currentBoids = allBoids.Count;
             for (int i = 0; i < boids - currentBoids; i++)
             {
                 AddBoid();
@@ -190,7 +185,7 @@ namespace BOIDSimulator
 
             if (!paused)
             {
-                for (int i = 0; i < allBoids.Length; i++)
+                for (int i = 0; i < allBoids.Count; i++)
                 {
                     IBoid boid = allBoids[i];
                     if (boid is NaturioBoid nBoid) { nBoid.SetIndexes(allBoidsIndex: i); }

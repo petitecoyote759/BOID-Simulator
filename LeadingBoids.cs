@@ -43,7 +43,7 @@ namespace BOIDSimulator
             position = new Vector2(x, y);
         }
 
-        public void Action(SMContainer<IBoid>[][] boidGrid, int gridSize, float dt)
+        public void Action(List<IBoid>[][] boidGrid, int gridSize, float dt)
         {
             
             nearbyLeaders = 0;
@@ -184,7 +184,7 @@ namespace BOIDSimulator
 
         Vector2 averagePosition = new Vector2();
         float nearbyBoids = 0;
-        private void RunBoidActions(SMContainer<IBoid> boids, float dt, bool currentGrid = false)
+        private void RunBoidActions(List<IBoid> boids, float dt, bool currentGrid = false)
         {
             Vector2 modifiedVelocity = new Vector2(velocity.Y, -velocity.X);
 
@@ -276,7 +276,7 @@ namespace BOIDSimulator
         Queue<Vector2>? path = null;
         const float leaderVel = maxSpeed / 4;
         const float pathDist = 50f;
-        private void RunLeader(int gridX, int gridY, int width, int height, SMContainer<IBoid>[][] boidGrid)
+        private void RunLeader(int gridX, int gridY, int width, int height, List<IBoid>[][] boidGrid)
         {
             if (pather is null)
             {
@@ -340,7 +340,7 @@ namespace BOIDSimulator
         }
 
 
-        private void CountLeaders(int gridX, int gridY, int width, int height, SMContainer<IBoid>[][] boidGrid)
+        private void CountLeaders(int gridX, int gridY, int width, int height, List<IBoid>[][] boidGrid)
         {
             nearbyLeaders = 0;
 
@@ -379,7 +379,7 @@ namespace BOIDSimulator
                 CountLeadersInGrid(boidGrid[gridX][gridY - 1]);
             }
         }
-        private void CountLeadersInGrid(SMContainer<IBoid> boids)
+        private void CountLeadersInGrid(List<IBoid> boids)
         {
             foreach (IBoid boid in boids)
             {

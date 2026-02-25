@@ -8,7 +8,7 @@ namespace BOIDSimulator
         public Vector2 position { get; set; }
         public Vector2 velocity { get; set; }
 
-        public void Action(SMContainer<IBoid>[][] boidGrid, int gridSize, float dt);
+        public void Action(List<IBoid>[][] boidGrid, int gridSize, float dt);
     }
 
 

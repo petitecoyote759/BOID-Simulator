@@ -89,7 +89,7 @@ namespace BOIDSimulator
 
 
 
-        public void Action(SMContainer<IBoid>[][] boidGrid, int gridSize, float dt)
+        public void Action(List<IBoid>[][] boidGrid, int gridSize, float dt)
         {
             for (int x = 0; x < boidGrid.Length; x++)
             {
@@ -125,7 +125,7 @@ namespace BOIDSimulator
             if (oldGridX != gridX || oldGridY != gridY)
             {
                 _ = boidGrid[oldGridX][oldGridY].Remove(this);
-                boidGridIndex = boidGrid[gridX][gridY].Add(this);
+                boidGrid[gridX][gridY].Add(this);
             }
 
             tileX = (int)position.X; tileY = (int)position.Y;
@@ -169,7 +169,7 @@ namespace BOIDSimulator
 
         static readonly int targetX = General.map.Length / 2; 
         static readonly int targetY = General.map[0].Length / 2; // Centre of the map
-        private void LeaderAction(SMContainer<IBoid>[][] boidGrid, int gridSize, float dt)
+        private void LeaderAction(List<IBoid>[][] boidGrid, int gridSize, float dt)
         {
             // Simply path to centre
             if (path is null || path.Count == 0)
@@ -203,7 +203,7 @@ namespace BOIDSimulator
 
 
 
-        private void FollowerAction(SMContainer<IBoid>[][] boidGrid, int gridSize, float dt)
+        private void FollowerAction(List<IBoid>[][] boidGrid, int gridSize, float dt)
         {
             // Check for charge
             // If not, follow leader boid
@@ -250,7 +250,7 @@ namespace BOIDSimulator
             (-1, -1), (0, -1), (1, -1), 
             (-1,  0), (0,  0), (1,  0), 
             (-1,  1), (0,  1), (1,  1) };
-        private int CountLeaders(SMContainer<IBoid>[][] boidGrid)
+        private int CountLeaders(List<IBoid>[][] boidGrid)
         {
             int leaderCount = 0;
 
@@ -278,7 +278,7 @@ namespace BOIDSimulator
             return leaderCount;
         }
 
-        private void DestroySelf(SMContainer<IBoid>[][] boidGrid)
+        private void DestroySelf(List<IBoid>[][] boidGrid)
         {
             _ = General.allBoids.Remove(this);
             bool success = boidGrid[gridX][gridY].Remove(this);

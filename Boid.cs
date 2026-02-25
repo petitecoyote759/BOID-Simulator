@@ -22,7 +22,7 @@ namespace BOIDSimulator
             position = new Vector2(x, y);
         }
 
-        public void Action(SMContainer<IBoid>[][] boidGrid, int gridSize, float dt)
+        public void Action(List<IBoid>[][] boidGrid, int gridSize, float dt)
         {
 
             int width = boidGrid.GetLength(0);
@@ -93,7 +93,7 @@ namespace BOIDSimulator
 
 
 
-        private void RunCoherence(SMContainer<IBoid> boids, float dt, bool currentGrid = false)
+        private void RunCoherence(List<IBoid> boids, float dt, bool currentGrid = false)
         {
             Vector2 modifiedVelocity = new Vector2(velocity.Y, -velocity.X);
 
