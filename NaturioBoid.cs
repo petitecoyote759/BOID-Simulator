@@ -46,8 +46,8 @@ namespace BOIDSimulator
         // <<Private Class Variables>> //
 
         // Boid Grid coordinates
-        private int gridX = 0;
-        private int gridY = 0;
+        public int gridX = 0;
+        public int gridY = 0;
 
 
         // Tile coordinates
@@ -105,7 +105,7 @@ namespace BOIDSimulator
             bool success = boidGrid[gridX][gridY].Remove(this);
             if (!success)
             {
-                Console.WriteLine("Could not remove, ruh roh");
+                //Console.WriteLine("Could not remove, ruh roh");
             }
             gridX = (int)(position.X / General.boidGridSize);
             gridY = (int)(position.Y / General.boidGridSize);
@@ -241,7 +241,7 @@ namespace BOIDSimulator
 
         private void DestroySelf(SMContainer<IBoid>[][] boidGrid)
         {
-            _ = General.allBoids.RemoveAt(allBoidsIndex);
+            _ = General.allBoids.Remove(this);
             _ = boidGrid[gridX][gridY].Remove(this);
         }
         private static bool Walkable(int x, int y)

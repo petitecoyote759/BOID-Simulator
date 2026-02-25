@@ -1,5 +1,6 @@
 ﻿using ShortTools.MagicContainer;
 using SimpleGraphicsLib;
+using System.ComponentModel.Design;
 using static ShortTools.General.Prints;
 
 
@@ -11,7 +12,7 @@ namespace BOIDSimulator
         static SMContainer<IBoid>[][] boidGrid = new SMContainer<IBoid>[0][];
         public static SMContainer<IBoid> allBoids = new SMContainer<IBoid>();
         public const int boidGridSize = 32;
-        const int boids = 20;
+        const int boids = 10;
         const bool leadingBoids = true;
         public static TileID[][] map;
 
@@ -80,6 +81,7 @@ namespace BOIDSimulator
                     input = Console.ReadLine()?.ToUpperInvariant() ?? "";
                     if (input == "RESET")
                     {
+                        Console.WriteLine("Resetting");
                         for (int x = 0; x < boidGridw; x++)
                         {
                             for (int y = 0; y < boidGridh; y++)
@@ -89,10 +91,30 @@ namespace BOIDSimulator
                         }
                         allBoids = new SMContainer<IBoid>();
                         AddBoids(random);
+                        continue;
                     }
                     else if (input == "SR") // Switch Render
                     {
                         gridRender = !gridRender;
+                        Console.WriteLine($"Switching renderer to {(gridRender ? "grid mode" : "normal mode")}");
+                        continue;
+                    }
+                    else if (input == "PAUSE")
+                    {
+                        Console.WriteLine(paused ? "Unpausing" : "Pausing");
+                        paused = !paused;
+                    }
+                    else if (input == "H")
+                    {
+                        Console.WriteLine(highlight ? "Unhighlighting" : "Highlighting");
+                        highlight = !highlight;
+                    }
+                    else if (input == "HELP")
+                    {
+                        Console.WriteLine("Options:\n\nReset - resets the sim" +
+                            "\nsr - switch renderer to or from grid rendering" +
+                            "\npause - pause the movement of the boids" +
+                            "\nh - highlight tiles");
                     }
                 }
             }
@@ -153,6 +175,8 @@ namespace BOIDSimulator
 
 
         static bool gridRender = false;
+        static bool paused = false;
+        static bool highlight = true;
         static Random random = new Random();
         private static void RenderBoids()
         {
@@ -164,6 +188,16 @@ namespace BOIDSimulator
                 AddBoid();
             }
 
+            if (!paused)
+            {
+                for (int i = 0; i < allBoids.Length; i++)
+                {
+                    IBoid boid = allBoids[i];
+                    if (boid is NaturioBoid nBoid) { nBoid.SetIndexes(allBoidsIndex: i); }
+
+                    boid.Action(boidGrid, boidGridSize, dt);
+                }
+            }
 
             if (gridRender)
             {
@@ -180,10 +214,8 @@ namespace BOIDSimulator
             }
             else
             {
-                for (int i = 0; i < allBoids.Length; i++)
+                foreach (IBoid boid in allBoids)
                 {
-                    IBoid boid = allBoids[i];
-                    if (boid is NaturioBoid nBoid) { nBoid.SetIndexes(allBoidsIndex: i); }
                     RenderBoid(boid);
                 }
             }
@@ -192,7 +224,19 @@ namespace BOIDSimulator
 
         private static void RenderBoid(IBoid boid)
         {
-            boid.Action(boidGrid, boidGridSize, dt);
+            if (highlight && boid is NaturioBoid nBoid)
+            {
+                renderer.SetPixel(
+                    nBoid.gridX * boidGridSize * PPT,
+                    nBoid.gridY * boidGridSize * PPT,
+                    boidGridSize * PPT,
+                    boidGridSize * PPT,
+                    0,
+                    100,
+                    200,
+                    80
+                    );
+            }
             if (boid is ILeadable leaderBoid && leaderBoid.Leader)
             {
                 renderer.SetPixel(
