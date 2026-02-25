@@ -196,7 +196,7 @@ namespace BOIDSimulator
             if (boidGrid is null || map is null) { return; }
 
             int currentBoids = allBoids.Count;
-            for (int i = 0; i < boids - currentBoids; i++)
+            if (currentBoids < boids)
             {
                 AddBoid();
             }

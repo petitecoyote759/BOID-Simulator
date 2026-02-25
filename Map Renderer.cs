@@ -173,7 +173,7 @@ namespace BOIDSimulator
 
 
         const float pathWidth = 40f;
-        const float pathHeight = 1.5f;
+        const float pathHeight = 2f;
         const float borderWidth = 50f;
         const float borderHeight = 3f;
         const float islandWidth = 40f;

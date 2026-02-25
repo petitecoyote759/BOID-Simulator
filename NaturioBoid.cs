@@ -23,8 +23,8 @@ namespace BOIDSimulator
         // <<Class Settings>> //
 
         const float leaderSpeed = 20f; // blocks per second
-        const float followerSpeed = 1.1f * leaderSpeed;
-        const float followerAcceleration = 30f;
+        const float followerSpeed = 1.15f * leaderSpeed;
+        const float followerAcceleration = 25f;
 
         const float destroyZoneRadius = 10f; // how many blocks around the centre are the "kill zone", meaning the BOIDS will be deleted
 
@@ -43,6 +43,7 @@ namespace BOIDSimulator
         const float startPathDistanceRatio = 0.4f; // what portion of a boidGrid the leaders would be willing to walk to find a preset path
 
         const float minLeaderLifespanSeconds = 3; // minimum number of seconds a leader should live for
+        const float totalBoidLifespanSeconds = 50;
         const float minLeaderFollowSeconds = 3;
 
 
@@ -95,6 +96,7 @@ namespace BOIDSimulator
         // Leader Timegate
         private long leaderCreationTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
         private long leaderFollowStartTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+        private long creationTime;
 
 
         // Current Leader
@@ -110,6 +112,7 @@ namespace BOIDSimulator
 
         const long minLeaderLifespan = (int)(1000 * minLeaderLifespanSeconds);
         const long minLeaderFollowDuration = (int)(1000 * minLeaderFollowSeconds);
+        const long totalBoidLifespan = (int)(1000 * totalBoidLifespanSeconds);
 
 
         // <<Constructors>> //
@@ -143,6 +146,8 @@ namespace BOIDSimulator
             gridY = (int)(y / General.boidGridSize);
 
             tileX = (int)x; tileY = (int)y;
+
+            creationTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
         }
 
         // Not currently used, useful for constant time deletion with the Magic Container
@@ -164,7 +169,18 @@ namespace BOIDSimulator
             if (MathF.Abs(targetX - tileX) + MathF.Abs(targetY - tileY) < destroyZoneRadius)
             {
                 DestroySelf(boidGrid);
+                return;
             }
+
+
+            // <<Destroy After Lifespan>> //
+
+            if (DateTimeOffset.Now.ToUnixTimeMilliseconds() - creationTime > totalBoidLifespan)
+            {
+                DestroySelf(boidGrid);
+                return;
+            }
+
 
 
 
