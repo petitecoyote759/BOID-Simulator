@@ -15,6 +15,7 @@ namespace BOIDSimulator
     {
         // <<Class Settings>> //
 
+        const float followerSpeed = 2 * leaderSpeed;
         const float leaderSpeed = 20f; // blocks per second
 
         const float destroyZoneRadius = 10f; // how many blocks around the centre are the "kill zone", meaning the BOIDS will be deleted
@@ -207,6 +208,32 @@ namespace BOIDSimulator
             // Check for charge
             // If not, follow leader boid
             // And avoid walls
+
+            PriorityQueue<IBoid, float> leaderQueue = new PriorityQueue<IBoid, float>();
+
+            foreach ((int, int) gridRCoords in gridChecks)
+            {
+                // gridRCoords -> grid relative coordinates, just add them and check that grid
+                int targetGridX = gridX + gridRCoords.Item1;
+                int targetGridY = gridY + gridRCoords.Item2;
+
+                foreach (IBoid boid in boidGrid[targetGridX][targetGridY])
+                {
+                    if (boid is not NaturioBoid nBoid) { continue; }
+                    if (nBoid.leader == false) { continue; }
+
+                    // only leaders
+                    float distance = MathF.Abs(position.X - boid.position.X) + MathF.Abs(position.Y - boid.position.Y);
+                    leaderQueue.Enqueue(boid, distance);
+                }
+            }
+
+            // closest boid, should always be one due to DLA
+            IBoid leaderBoid = leaderQueue.Dequeue();
+
+            Vector2 direction = Vector2.Normalize(leaderBoid.position - position);
+
+            position += direction * followerSpeed * dt;
         }
 
 
