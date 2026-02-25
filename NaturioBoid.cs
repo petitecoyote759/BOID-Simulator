@@ -4,7 +4,9 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Xml.Linq;
 using Path = System.Collections.Generic.Queue<System.Numerics.Vector2>; // Queue<Vector2>
-using CacheCell = System.Collections.Generic.List<System.Collections.Generic.Queue<System.Numerics.Vector2>>; // List<Path>
+using CacheCell = System.Collections.Generic.List<System.Collections.Generic.Queue<System.Numerics.Vector2>>;
+using System.Reflection.Metadata;
+using System.Diagnostics.CodeAnalysis; // List<Path>
 
 
 
@@ -21,8 +23,8 @@ namespace BOIDSimulator
         // <<Class Settings>> //
 
         const float leaderSpeed = 20f; // blocks per second
-        const float followerSpeed = 1.3f * leaderSpeed;
-        const float followerAcceleration = 20f;
+        const float followerSpeed = 1.1f * leaderSpeed;
+        const float followerAcceleration = 30f;
 
         const float destroyZoneRadius = 10f; // how many blocks around the centre are the "kill zone", meaning the BOIDS will be deleted
 
@@ -38,6 +40,18 @@ namespace BOIDSimulator
 
 
 
+        const float startPathDistanceRatio = 0.4f; // what portion of a boidGrid the leaders would be willing to walk to find a preset path
+
+        const float minLeaderLifespanSeconds = 3; // minimum number of seconds a leader should live for
+        const float minLeaderFollowSeconds = 3;
+
+
+        const float alignmentConst = 0.2f;
+        const int blockCheckRange = 4;
+        const float seperationConst = 1f;
+
+
+
         // <<Public Class Variables>> //
 
         public Vector2 position;
@@ -48,7 +62,7 @@ namespace BOIDSimulator
         Vector2 IBoid.velocity { get => velocity; set => velocity = value; }
 
 
-        public bool leader = true; // default to false normally
+        public bool leader = false; // default to false normally
         public bool Leader => leader;
 
 
@@ -73,11 +87,29 @@ namespace BOIDSimulator
         // Cached Paths
         private static CacheCell[][] cachedPaths = Array.Empty<CacheCell[]>();
 
+        
+        // Cached counts
+        private static List<NaturioBoid>[][] leaderGrid = Array.Empty<List<NaturioBoid>[]>();
+
+
+        // Leader Timegate
+        private long leaderCreationTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+        private long leaderFollowStartTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+
+
+        // Current Leader
+        private NaturioBoid? currentLeader = null;
+
 
         // <<Modified Constants>> //
         const float leaderNodeMinDistanceSquared = leaderNodeMinDistance * leaderNodeMinDistance; // Precompute this to speed up itterations
+
         const float followerSpeedSquared = followerSpeed * followerSpeed;
-        const float followerChargeRangeSquared = followerChargeRange * followerChargeRange;
+
+        const int startPathDistance = (int)(startPathDistanceRatio * General.boidGridSize);
+
+        const long minLeaderLifespan = (int)(1000 * minLeaderLifespanSeconds);
+        const long minLeaderFollowDuration = (int)(1000 * minLeaderFollowSeconds);
 
 
         // <<Constructors>> //
@@ -85,18 +117,21 @@ namespace BOIDSimulator
         public static void SetupBoids(List<IBoid>[][] boidGrid)
         {
             cachedPaths = new CacheCell[boidGrid.Length][];
+            leaderGrid = new List<NaturioBoid>[boidGrid.Length][];
             for (int x = 0; x < cachedPaths.Length; x++)
             {
                 cachedPaths[x] = new CacheCell[boidGrid[0].Length];
+                leaderGrid[x] = new List<NaturioBoid>[boidGrid[0].Length];
                 for (int y = 0; y < cachedPaths[0].Length; y++)
                 {
                     cachedPaths[x][y] = new CacheCell();
+                    leaderGrid[x][y] = new List<NaturioBoid>();
                 }
             }
             if (pather is null)
             {
                 pather = new PathFinder(Walkable, maxDist: 1000, useDiagonals: true);
-                intraGridPather = new PathFinder(Walkable, maxDist: General.boidGridSize, useDiagonals: true);
+                intraGridPather = new PathFinder(Walkable, maxDist: startPathDistance, useDiagonals: true);
             }
         }
 
@@ -110,6 +145,7 @@ namespace BOIDSimulator
             tileX = (int)x; tileY = (int)y;
         }
 
+        // Not currently used, useful for constant time deletion with the Magic Container
         public void SetIndexes(int? allBoidsIndex = null, int? boidGridIndex = null)
         {
             this.allBoidsIndex = allBoidsIndex ?? this.allBoidsIndex;
@@ -137,17 +173,18 @@ namespace BOIDSimulator
             int leaderCount = CountLeaders(boidGrid);
 
 
-            if (!leader && leaderCount < leaderDensityMin)
+            if (!leader && leaderCount < leaderDensityMin) // become leader
             {
-                //Console.WriteLine($"Becoming Leader (count {leaderCount}) At coords {position} Grid ({gridX}x{gridY}) " +
-                //    $"should be ({(int)(position.X / General.boidGridSize)}x{(int)(position.Y / General.boidGridSize)}) time {DateTimeOffset.Now.ToUnixTimeMilliseconds()}");
+                leaderGrid[gridX][gridY].Add(this);
                 this.leader = true;
                 this.velocity = new Vector2();
+                this.leaderCreationTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+                this.currentLeader = null;
             }
-            else if (leader && leaderCount > leaderDensityMax)
+            else if (leader && leaderCount > leaderDensityMax && // become follower
+                DateTimeOffset.Now.ToUnixTimeMilliseconds() - leaderCreationTime > minLeaderLifespan) // has lived for a required amount of time
             {
-                //Console.WriteLine($"Becoming Follower (count {leaderCount}) At coords {position} Grid ({gridX}x{gridY}) " +
-                //    $"should be ({(int)(position.X / General.boidGridSize)}x{(int)(position.Y / General.boidGridSize)}) time {DateTimeOffset.Now.ToUnixTimeMilliseconds()}");
+                _ = leaderGrid[gridX][gridY].Remove(this);
                 this.leader = false;
                 path = null;
             }
@@ -178,6 +215,12 @@ namespace BOIDSimulator
             {
                 _ = boidGrid[oldGridX][oldGridY].Remove(this);
                 boidGrid[gridX][gridY].Add(this);
+
+                if (leader)
+                {
+                    _ = leaderGrid[oldGridX][oldGridY].Remove(this);
+                    leaderGrid[gridX][gridY].Add(this);
+                }
             }
 
             tileX = (int)position.X; tileY = (int)position.Y;
@@ -264,6 +307,8 @@ namespace BOIDSimulator
                 Vector2 node = testPath.Dequeue();
                 int x = (int)node.X;
                 int y = (int)node.Y;
+                if (0 > x || x >= General.map.Length) { return false; }
+                if (0 > y || y >= General.map[0].Length) { return false; }
                 if (General.Walkable(General.map[x][y]) == false) { return false; }
             }
             return true;
@@ -285,7 +330,7 @@ namespace BOIDSimulator
             // If not, follow leader boid
             // And avoid walls
 
-            if (MathF.Abs(targetX - tileX) + MathF.Abs(targetY - tileY) < followerChargeRange)
+            if (MathF.Abs(targetX - tileX) + MathF.Abs(targetY - tileY) < followerChargeRange) // Charging
             {
                 Vector2 step = Vector2.Normalize(new Vector2(targetX, targetY) - position) * followerSpeed * dt; // the distance to step.
                 position += step;
@@ -300,41 +345,77 @@ namespace BOIDSimulator
         private void FollowerFollow(List<IBoid>[][] boidGrid, int gridSize, float dt)
         {
             // <<Get Leader>> //
-            PriorityQueue<IBoid, float> leaderQueue = new PriorityQueue<IBoid, float>();
-
-            foreach ((int, int) gridRCoords in gridChecks)
+            if (currentLeader is null || DateTimeOffset.Now.ToUnixTimeMilliseconds() - leaderFollowStartTime > minLeaderFollowDuration)
             {
-                // gridRCoords -> grid relative coordinates, just add them and check that grid
-                int targetGridX = gridX + gridRCoords.Item1;
-                int targetGridY = gridY + gridRCoords.Item2;
+                PriorityQueue<IBoid, float> leaderQueue = new PriorityQueue<IBoid, float>();
 
-                // <<Bounds Checks>> //
-                if (targetGridX < 0 || targetGridY < 0) { continue; }
-                if (targetGridX >= boidGrid.Length || targetGridY >= boidGrid[0].Length) { continue; }
-
-                foreach (IBoid boid in boidGrid[targetGridX][targetGridY])
+                foreach ((int, int) gridRCoords in gridChecks)
                 {
-                    if (boid is not NaturioBoid nBoid) { continue; }
-                    if (nBoid.leader == false) { continue; }
+                    // gridRCoords -> grid relative coordinates, just add them and check that grid
+                    int targetGridX = gridX + gridRCoords.Item1;
+                    int targetGridY = gridY + gridRCoords.Item2;
 
-                    // only leaders
-                    float distance = MathF.Abs(position.X - boid.position.X) + MathF.Abs(position.Y - boid.position.Y);
-                    leaderQueue.Enqueue(boid, distance);
+                    // <<Bounds Checks>> //
+                    if (targetGridX < 0 || targetGridY < 0) { continue; }
+                    if (targetGridX >= boidGrid.Length || targetGridY >= boidGrid[0].Length) { continue; }
+
+                    foreach (NaturioBoid boid in leaderGrid[targetGridX][targetGridY])
+                    {
+                        if (boid.leader == false) { continue; }
+
+                        float distance = MathF.Abs(position.X - boid.position.X) + MathF.Abs(position.Y - boid.position.Y);
+                        leaderQueue.Enqueue(boid, distance);
+                    }
                 }
+
+                // closest boid, should always be one due to DLA
+                if (leaderQueue.Count == 0) { return; }
+                currentLeader = leaderQueue.Dequeue() as NaturioBoid;
             }
 
-            // closest boid, should always be one due to DLA
-            if (leaderQueue.Count == 0) { return; }
-            IBoid leaderBoid = leaderQueue.Dequeue();
-
+            if (currentLeader is null) { return; } // will never happen, just to satisfy compiler
 
 
 
             // <<Boid with Leader>> //
-            Vector2 direction = Vector2.Normalize(leaderBoid.position - position);
+            Vector2 direction = Vector2.Normalize(currentLeader.position - position);
             if (float.IsNaN(direction.X)) { return; } // they are on the same point
 
+
+            
             velocity += direction * followerAcceleration * dt;
+            
+            // Alignment
+            velocity = (velocity) + (alignmentConst * dt * currentLeader.velocity);
+
+            // <<Seperate from edges>> //
+            for (int x = -blockCheckRange / 2; x < blockCheckRange / 2; x++)
+            {
+                for (int y = -blockCheckRange / 2; y < blockCheckRange / 2; y++)
+                {
+                    Vector2 target = new Vector2(position.X + x, position.Y + y);
+
+                    if (target.X < 0 || target.X > (General.map.Length) - 1) { continue; }
+                    if (target.Y < 0 || target.Y > (General.map[0].Length) - 1) { continue; }
+
+                    if (General.Walkable(General.map[(int)(target.X)][(int)(target.Y)]) == false)
+                    {
+                        Vector2 push = position - target;
+                        if (push.LengthSquared() > 0.1f)
+                        {
+                            Vector2 normalVelocity = Vector2.Normalize(velocity);
+                            Vector2 normalPush = Vector2.Normalize(push);
+
+                            //velocity = normalPush + (Vector2.Dot(normalPush, normalVelocity) * normalVelocity);
+
+                            velocity += normalPush * seperationConst * followerAcceleration * dt; 
+                        }
+                    }
+                }
+            }
+            
+
+
             if (velocity.LengthSquared() > followerSpeedSquared)
             {
                 velocity = followerSpeed * Vector2.Normalize(velocity);
@@ -372,38 +453,21 @@ namespace BOIDSimulator
                 if (targetGridX < 0 || targetGridY < 0) { continue; }
                 if (targetGridX >= boidGrid.Length || targetGridY >= boidGrid[0].Length) { continue; }
 
-                foreach (IBoid boid in boidGrid[targetGridX][targetGridY])
-                {
-                    if (boid == this) { continue; }
-                    if (boid is ILeadable leadableBoid && leadableBoid.Leader == true)
-                    {
-                        leaderCount++;
-                    }
-                }
+                leaderCount += leaderGrid[targetGridX][targetGridY].Count;
             }
 
             return leaderCount;
         }
 
+
         private void DestroySelf(List<IBoid>[][] boidGrid)
         {
-            _ = General.allBoids.Remove(this);
-            bool success = boidGrid[gridX][gridY].Remove(this);
-            if (!success)
+            if (leader)
             {
-                Console.WriteLine($"Tried to destroy self at {gridX}x{gridY} but failed");
-                for (int x = 0; x < boidGrid.Length; x++)
-                {
-                    for (int y = 0; y < boidGrid[0].Length; y++)
-                    {
-                        if (x == gridX && y == gridY) { continue; }
-                        if (boidGrid[x][y].Contains(this))
-                        {
-                            Console.WriteLine($"Found at {x}x{y}");
-                        }
-                    }
-                }
+                leaderGrid[gridX][gridY].Remove(this);
             }
+            _ = General.allBoids.Remove(this);
+            _ = boidGrid[gridX][gridY].Remove(this);
         }
         private static bool Walkable(int x, int y)
         {

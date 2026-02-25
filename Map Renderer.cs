@@ -8,9 +8,6 @@ namespace BOIDSimulator
         static float[,] alitudeMap;
         static Tuple<int, int> centre = new Tuple<int, int>(0, 0);
 
-        const bool drawGridLines = true;
-
-
 
         const int scale = 1;
 
@@ -27,7 +24,7 @@ namespace BOIDSimulator
             {
                 for (int y = 0; y < height; y++)
                 {
-                    if (drawGridLines && (y % General.boidGridSize == 0 || x % General.boidGridSize == 0)) { renderer.SetPixel(x * size, y * size, size, size, 0, 0, 0); continue; }
+                    if (General.renderLines && (y % General.boidGridSize == 0 || x % General.boidGridSize == 0)) { renderer.SetPixel(x * size, y * size, size, size, 0, 0, 0); continue; }
                     Tuple<byte, byte, byte> colours = TileColours[tileMap[x][y]];
                     renderer.SetPixel(x * size, y * size, size, size, colours.Item1, colours.Item2, colours.Item3);
                 }

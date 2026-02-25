@@ -12,7 +12,7 @@ namespace BOIDSimulator
         static GraphicsHandler renderer = null;
         static List<IBoid>[][] boidGrid = new List<IBoid>[0][];
         public static List<IBoid> allBoids = new List<IBoid>();
-        public const int boidGridSize = 64;
+        public const int boidGridSize = 48;
         const int boids = 1000;
         const bool leadingBoids = true;
         public static TileID[][] map;
@@ -110,12 +110,24 @@ namespace BOIDSimulator
                         Console.WriteLine(highlight ? "Unhighlighting" : "Highlighting");
                         highlight = !highlight;
                     }
+                    else if (input == "SL")
+                    {
+                        Console.WriteLine(showLeaders ? "Hiding Leaders" : "Showing Leaders");
+                        showLeaders = !showLeaders;
+                    }
+                    else if (input == "RL")
+                    {
+                        Console.WriteLine(renderLines ? "Hiding Grid Lines" : "Showing Grid Lines");
+                        renderLines = !renderLines;
+                    }
                     else if (input == "HELP")
                     {
                         Console.WriteLine("Options:\n\nReset - resets the sim" +
                             "\nsr - switch renderer to or from grid rendering" +
                             "\npause - pause the movement of the boids" +
-                            "\nh - highlight tiles");
+                            "\nh - highlight tiles" +
+                            "\nsl - switch show leaders" +
+                            "\nrl - switch rendering of grid lines");
                     }
                 }
             }
@@ -166,6 +178,8 @@ namespace BOIDSimulator
         static bool gridRender = false;
         static bool paused = false;
         static bool highlight = false;
+        static bool showLeaders = true;
+        internal static bool renderLines = false;
         static Random random = new Random();
         private static void RenderBoids()
         {
@@ -228,7 +242,7 @@ namespace BOIDSimulator
                     80
                     );
             }
-            if (boid is ILeadable leaderBoid && leaderBoid.Leader)
+            if (showLeaders && boid is ILeadable leaderBoid && leaderBoid.Leader)
             {
                 renderer.SetPixel(
                     (int)((boid.position.X - (boidSize * 2)) * PPT),
