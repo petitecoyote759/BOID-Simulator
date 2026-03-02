@@ -37,10 +37,6 @@ namespace BOIDSimulator.ECS_Components
 
         // <<Private Variables>> //
 
-        private static int targetX = 0; // to be updated
-        private static int targetY = 0;
-
-
         private readonly long creationTime;
 
 
@@ -63,13 +59,21 @@ namespace BOIDSimulator.ECS_Components
             int tileX = Me.Value.tileX;
             int tileY = Me.Value.tileY;
 
+
             // <<Destroy at Centre>> //
 
-            if (MathF.Abs(targetX - tileX) + MathF.Abs(targetY - tileY) < rangeSquared)
+            EC_BoidLogic? boidLogic = (EC_BoidLogic?)ECSHandler.ECSs[typeof(EC_BoidLogic)][uid];
+            if (boidLogic is not null)
             {
-                ECSHandler.FreeUID(uid);
-                return;
+                int targetX = boidLogic.Value.targetX;
+                int targetY = boidLogic.Value.targetY;
+                if (MathF.Abs(targetX - tileX) + MathF.Abs(targetY - tileY) < rangeSquared)
+                {
+                    ECSHandler.FreeUID(uid);
+                    return;
+                }
             }
+            
 
 
             // <<Destroy After Lifespan>> //
