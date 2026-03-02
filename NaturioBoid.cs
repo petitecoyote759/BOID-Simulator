@@ -31,7 +31,7 @@ namespace BOIDSimulator
         const int leaderDensityMin = 1; // If the leaders in a 3x3 area is less than this, then they will self promote,
         const int leaderDensityMax = 2; // however if over this value, it will stop being a leader
 
-        const int pathCacheMax = 5;
+        
 
 
         const float leaderNodeMinDistance = 0.5f; // How close a leader needs to be to a node for it to register as visited in blocks
@@ -40,10 +40,9 @@ namespace BOIDSimulator
 
 
 
-        const float startPathDistanceRatio = 0.4f; // what portion of a boidGrid the leaders would be willing to walk to find a preset path
+        
 
         const float minLeaderLifespanSeconds = 3; // minimum number of seconds a leader should live for
-        const float totalBoidLifespanSeconds = 120;
         const float minLeaderFollowSeconds = 3;
 
 
@@ -85,8 +84,7 @@ namespace BOIDSimulator
         private int boidGridIndex = -1;
 
 
-        // Cached Paths
-        private static CacheCell[][] cachedPaths = Array.Empty<CacheCell[]>();
+        
 
         
         // Cached counts
@@ -96,7 +94,7 @@ namespace BOIDSimulator
         // Leader Timegate
         private long leaderCreationTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
         private long leaderFollowStartTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-        private long creationTime;
+        
 
 
         // Current Leader
@@ -108,7 +106,7 @@ namespace BOIDSimulator
 
         const float followerSpeedSquared = followerSpeed * followerSpeed;
 
-        const int startPathDistance = (int)(startPathDistanceRatio * General.boidGridSize);
+        
 
         const long minLeaderLifespan = (int)(1000 * minLeaderLifespanSeconds);
         const long minLeaderFollowDuration = (int)(1000 * minLeaderFollowSeconds);
@@ -147,7 +145,6 @@ namespace BOIDSimulator
 
             tileX = (int)x; tileY = (int)y;
 
-            creationTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
         }
 
         // Not currently used, useful for constant time deletion with the Magic Container
@@ -164,24 +161,6 @@ namespace BOIDSimulator
 
         public void Action(List<IBoid>[][] boidGrid, int gridSize, float dt)
         {
-            // <<Destroy at Centre>> //
-
-            if (MathF.Abs(targetX - tileX) + MathF.Abs(targetY - tileY) < destroyZoneRadius)
-            {
-                DestroySelf(boidGrid);
-                return;
-            }
-
-
-            // <<Destroy After Lifespan>> //
-
-            if (DateTimeOffset.Now.ToUnixTimeMilliseconds() - creationTime > totalBoidLifespan)
-            {
-                DestroySelf(boidGrid);
-                return;
-            }
-
-
 
 
             // <<Dynamic Leader Allocation>> //
@@ -247,54 +226,13 @@ namespace BOIDSimulator
 
 
         // <<Leader Action Variables>> //
-        private static PathFinder pather;
-        private static PathFinder intraGridPather; // used to path inside of a cell
         Path? path = null;
 
         static readonly int targetX = General.map.Length / 2; 
         static readonly int targetY = General.map[0].Length / 2; // Centre of the map
         private void LeaderAction(List<IBoid>[][] boidGrid, int gridSize, float dt)
         {
-            // Simply path to centre
-            if (path is null || path.Count == 0)
-            {
-                // <<Get Path From Cache>> //
-                CacheCell currentCache = cachedPaths[gridX][gridY];
-                
-                for (int i = 0; i < currentCache.Count; i++)
-                {
-                    Path cachedPath = new Path(currentCache[i]); // makes a deep copy
-
-                    Vector2 pathStart = cachedPath.Peek();
-                    int pathStartX = (int)pathStart.X;
-                    int pathStartY = (int)pathStart.Y;
-
-                    Path? toStartPath = intraGridPather.GetPath(tileX, tileY, pathStartX, pathStartY);
-
-                    if (toStartPath is null) { continue; }
-                    if (!PathIsValid(cachedPath)) { currentCache.RemoveAt(i); i--; continue; }
-
-                    path = toStartPath;
-                    int length = cachedPath.Count;
-                    for (int j = 0; j < length; j++)
-                    {
-                        path.Enqueue(cachedPath.Dequeue());
-                    }
-                    break;
-                }
-                // <<Generate New Path>> //
-                if (path is null || path.Count == 0)
-                {
-                    // create new path if none there
-                    path = pather.GetPath(tileX, tileY, targetX, targetY);
-                    if (path is null || path.Count == 0) { DestroySelf(boidGrid); return; } // no path could be found, so it should not be there.
-                    // path is not null
-                    if (currentCache.Count < pathCacheMax)
-                    {
-                        cachedPaths[gridX][gridY].Add(new Path(path));
-                    }
-                }
-            }
+            
 
             // Path is there and has items
             Vector2 node = path.Peek();
@@ -315,20 +253,7 @@ namespace BOIDSimulator
                 position += step;
             }
         }
-        private static bool PathIsValid(Path path)
-        {
-            Path testPath = new Path(path);
-            while (testPath.Count != 0)
-            {
-                Vector2 node = testPath.Dequeue();
-                int x = (int)node.X;
-                int y = (int)node.Y;
-                if (0 > x || x >= General.map.Length) { return false; }
-                if (0 > y || y >= General.map[0].Length) { return false; }
-                if (General.Walkable(General.map[x][y]) == false) { return false; }
-            }
-            return true;
-        }
+        
 
 
 

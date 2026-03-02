@@ -10,13 +10,39 @@ namespace BOIDSimulator
 {
     internal static class Renderer
     {
+        public static bool running = true;
 
+        private static ManualResetEvent tasksDone = new(false);
+        internal static void MainLoop()
+        {
+            while (running)
+            {
+                foreach (Action task in tasks)
+                {
+                    task();
+                }
+                tasksDone.Reset();
+                tasksDone.WaitOne();
+            }
+        }
+
+
+
+
+        
+
+        static Queue<Action> tasks = new Queue<Action>();
+        internal static void RequestDrawGrid(int gridX, int gridY)
+        {
+            tasks.Enqueue(() => DrawGrid(gridX, gridY));
+            tasksDone.Set();
+        }
 
 
         public const int drawGridSize = 8;
-        internal static void DrawGrid(int gridX, int gridY)
+        private static void DrawGrid(int gridX, int gridY)
         {
-            if (Map.tileMap is null) { return; }
+            if (Map.tileMap is null || Map.altitudeMap is null) { return; }
 
             int width = Map.tileMap.Length;
             int height = Map.tileMap[0].Length;
