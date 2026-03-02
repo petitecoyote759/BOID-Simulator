@@ -50,7 +50,7 @@ namespace BOIDSimulator
             debugger.DefaultLevel = WarningLevel.Info;
 
             using (renderer = new GraphicsHandler(1920, 1080,
-               render: (() => { MapRenderer.Render(renderer, map, boidGrid); RenderBoids(); }),//Render,
+               render: (() => { Map.Render(renderer, map, boidGrid); RenderBoids(); }),//Render,
                flags: RendererFlag.OutputToTerminal))
             {
                 debugger.AddLog($"Starting Perlin Demo with {boids} boids");
@@ -58,7 +58,7 @@ namespace BOIDSimulator
 
                 renderer.Pause();
 
-                map = MapRenderer.CreateMap(renderer.screenwidth / PPT, renderer.screenheight / PPT);
+                map = Map.CreateMap(renderer.screenwidth / PPT, renderer.screenheight / PPT);
 
 
                 int boidGridw = (renderer.screenwidth / (boidGridSize * PPT)) + 1;
