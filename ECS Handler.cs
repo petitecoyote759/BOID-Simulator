@@ -6,15 +6,17 @@ using System.Runtime.CompilerServices;
 
 namespace BOIDSimulator
 {
-    internal class ECSHandler
+    internal static class ECSHandler
     {
         // <<Public Variables>> //
         internal static List<bool> entities = new List<bool>();
         internal static Dictionary<Type, List<IEntityComponent?>> ECSs = CreateECSs();
 
-
+        internal static Thread controllerThread = new Thread(new ThreadStart(RunLoop));
 
         internal static HashSet<(int, int)> updatedGrids = new HashSet<(int, int)>();
+
+        internal static bool running = true;
 
 
 
@@ -57,6 +59,24 @@ namespace BOIDSimulator
 
 
         // <<Main Functions>> //
+        private static long LFT = DateTimeOffset.Now.ToUnixTimeMilliseconds();// last frame time
+        private const int MaxFPS = 60;
+        private const long MaxMsPerFrame = 1000 / MaxFPS;
+        public static void RunLoop()
+        {
+            while (running)
+            {
+                long now = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+                float dt = (now - LFT) / 1000f;
+                LFT = now;
+
+                Run(dt);
+            }
+        }
+        
+        
+        
+        
         public static void Run(float dt)
         {
             updatedGrids = new HashSet<(int, int)>();
@@ -76,6 +96,8 @@ namespace BOIDSimulator
             }
         }
 
+
+        private static Type renderType = typeof(EC_Render);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static void RunEntitiy(int uid, float dt)
         {
