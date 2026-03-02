@@ -136,15 +136,17 @@ namespace BOIDSimulator.ECS_Components
 
         private static bool PathIsValid(Path path)
         {
+            if (Map.tileMap is null) { return false; }
+
             Path testPath = new Path(path);
             while (testPath.Count != 0)
             {
                 Vector2 node = testPath.Dequeue();
                 int x = (int)node.X;
                 int y = (int)node.Y;
-                if (0 > x || x >= General.map.Length) { return false; }
-                if (0 > y || y >= General.map[0].Length) { return false; }
-                if (General.Walkable(General.map[x][y]) == false) { return false; }
+                if (0 > x || x >= Map.tileMap.Length) { return false; }
+                if (0 > y || y >= Map.tileMap.Length) { return false; }
+                if (General.Walkable(Map.tileMap[x][y]) == false) { return false; }
             }
             return true;
         }
