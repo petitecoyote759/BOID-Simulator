@@ -58,14 +58,10 @@ namespace BOIDSimulator.ECS_Components
         public readonly void Action(float dt, int uid)
         {
             EC_Entity? Me = (EC_Entity?)ECSHandler.ECSs[typeof(EC_Entity)][uid];
-            if (Me is null) { General.debugger.AddLog($"Error, entity {uid} has no entity data!", WarningLevel.Error); }
+            if (Me is null) { General.debugger.AddLog($"Error, entity {uid} has no entity data!", WarningLevel.Error); return; }
 
-#pragma warning disable CS8629 // Me cannot be null at this point
-            Vector2 pos = Me.Value.position;
-#pragma warning restore CS8629
-
-            int tileX = (int)(pos.X / General.boidGridSize);
-            int tileY = (int)(pos.Y / General.boidGridSize);
+            int tileX = Me.Value.tileX;
+            int tileY = Me.Value.tileY;
 
             // <<Destroy at Centre>> //
 
