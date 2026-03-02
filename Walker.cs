@@ -2,6 +2,7 @@
 using ShortTools.General;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -16,14 +17,21 @@ namespace BOIDSimulator
 
         private const int deletionRadiusSquared = deletionRadius * deletionRadius;
 
-        public static int CreateWalker()
+        public static int CreateWalker(Vector2 position)
         {
             int uid = ECSHandler.GetUID();
 
             ECSHandler.entities[uid] = true;
 
+
+
+            // <<Set Variables>> //
+            EC_Entity Me = new EC_Entity();
+            Me.position = position;
+
+
             // <<EAF Creation>> //
-            ECSHandler.ECSs[typeof(EC_Entity)][uid] = new EC_Entity();
+            ECSHandler.ECSs[typeof(EC_Entity)][uid] = Me;
             ECSHandler.ECSs[typeof(EC_Despawning)][uid] = new EC_Despawning(deletionRadiusSquared);
             ECSHandler.ECSs[typeof(EC_BoidLogic)][uid] = new EC_BoidLogic();
             ECSHandler.ECSs[typeof(EC_Pathfinding)][uid] = new EC_Pathfinding();
@@ -33,6 +41,8 @@ namespace BOIDSimulator
 #pragma warning disable CS8602 // This should absolutely not be null as it is assigned just a few lines up
             ECSHandler.ECSs[typeof(EC_Pathfinding)][uid].Active = false;
 #pragma warning restore CS8602
+
+
 
             return uid;
         }
