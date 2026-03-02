@@ -1,10 +1,13 @@
-﻿using ShortTools.MagicContainer;
+﻿using ShortTools.PlanetaryForge;
+using ShortTools.General;
+using ShortTools.MagicContainer;
 using SimpleGraphicsLib;
 using System.Collections.ObjectModel;
 using System.ComponentModel.Design;
-using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics;
 using System.Security.Cryptography;
 using static ShortTools.General.Prints;
+using Debugger = ShortTools.General.Debugger;
 
 
 namespace BOIDSimulator
@@ -15,10 +18,10 @@ namespace BOIDSimulator
         static List<IBoid>[][] boidGrid = new List<IBoid>[0][];
         public static List<IBoid> allBoids = new List<IBoid>();
         public const int boidGridSize = 48;
-        const int boids = 1000;
+        const int boids = 10000;
         const bool leadingBoids = true;
         public static TileID[][] map;
-
+        public static Debugger debugger;
 
 
 
@@ -38,18 +41,20 @@ namespace BOIDSimulator
         }
 
 
-        public const int PPT = 2; // pixels per tile
+        public const int PPT = 1; // pixels per tile
 
         public static void Main(string[] args)
         {
             Random random = new Random();
+            debugger = new Debugger(DebuggerFlag.ShortDefault);
+            debugger.DefaultLevel = WarningLevel.Info;
 
             using (renderer = new GraphicsHandler(1920, 1080,
-               render: (() => { MapRenderer.Render(renderer, map); RenderBoids(); }),//Render,
+               render: (() => { MapRenderer.Render(renderer, map, boidGrid); RenderBoids(); }),//Render,
                flags: RendererFlag.OutputToTerminal))
             {
-                Console.WriteLine("Starting Perlin Demo");
-                Console.WriteLine($"Dimensions = {renderer.screenwidth}x{renderer.screenheight}");
+                debugger.AddLog($"Starting Perlin Demo with {boids} boids");
+                debugger.AddLog($"Dimensions = {renderer.screenwidth}x{renderer.screenheight}", WarningLevel.Debug);
 
                 renderer.Pause();
 
@@ -59,7 +64,7 @@ namespace BOIDSimulator
                 int boidGridw = (renderer.screenwidth / (boidGridSize * PPT)) + 1;
                 int boidGridh = (renderer.screenheight / (boidGridSize * PPT)) + 1;
 
-                Console.WriteLine($"Width of {boidGridw}x{boidGridh}");
+                debugger.AddLog($"Width of {boidGridw}x{boidGridh}", WarningLevel.Debug);
                 boidGrid = new List<IBoid>[boidGridw][];
                 for (int x = 0; x < boidGridw; x++)
                 {
@@ -81,10 +86,12 @@ namespace BOIDSimulator
                 string input = "";
                 while (input != "Q")
                 {
-                    input = Console.ReadLine()?.ToUpperInvariant() ?? "";
+                    string rawInput = Console.ReadLine() ?? "";
+                    input = rawInput.ToUpperInvariant();
+                    debugger.AddLog($"User inputted: \"{rawInput}\"", WarningLevel.Debug);
                     if (input == "RESET")
                     {
-                        Console.WriteLine("Resetting");
+                        debugger.AddLog("Resetting");
                         for (int x = 0; x < boidGridw; x++)
                         {
                             for (int y = 0; y < boidGridh; y++)
@@ -99,32 +106,32 @@ namespace BOIDSimulator
                     else if (input == "SR") // Switch Render
                     {
                         gridRender = !gridRender;
-                        Console.WriteLine($"Switching renderer to {(gridRender ? "grid mode" : "normal mode")}");
+                        debugger.AddLog($"Switching renderer to {(gridRender ? "grid mode" : "normal mode")}");
                         continue;
                     }
                     else if (input == "PAUSE")
                     {
-                        Console.WriteLine(paused ? "Unpausing" : "Pausing");
+                        debugger.AddLog(paused ? "Unpausing" : "Pausing");
                         paused = !paused;
                     }
                     else if (input == "H")
                     {
-                        Console.WriteLine(highlight ? "Unhighlighting" : "Highlighting");
+                        debugger.AddLog(highlight ? "Unhighlighting" : "Highlighting");
                         highlight = !highlight;
                     }
                     else if (input == "SL")
                     {
-                        Console.WriteLine(showLeaders ? "Hiding Leaders" : "Showing Leaders");
+                        debugger.AddLog(showLeaders ? "Hiding Leaders" : "Showing Leaders");
                         showLeaders = !showLeaders;
                     }
                     else if (input == "RL")
                     {
-                        Console.WriteLine(renderLines ? "Hiding Grid Lines" : "Showing Grid Lines");
+                        debugger.AddLog(renderLines ? "Hiding Grid Lines" : "Showing Grid Lines");
                         renderLines = !renderLines;
                     }
                     else if (input == "RR")
                     {
-                        Console.WriteLine(renderRandom ? "Disabling Render Random" : "Rendering Random");
+                        debugger.AddLog(renderRandom ? "Disabling Render Random" : "Rendering Random");
                         renderRandom = !renderRandom;
                     }
                     else if (input == "HELP")
@@ -139,6 +146,8 @@ namespace BOIDSimulator
                     }
                 }
             }
+
+            debugger.Dispose();
         }
 
 

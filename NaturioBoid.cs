@@ -36,14 +36,14 @@ namespace BOIDSimulator
 
         const float leaderNodeMinDistance = 0.5f; // How close a leader needs to be to a node for it to register as visited in blocks
 
-        const float followerChargeRange = 50f;
+        const float followerChargeRange = 80f;
 
 
 
         const float startPathDistanceRatio = 0.4f; // what portion of a boidGrid the leaders would be willing to walk to find a preset path
 
         const float minLeaderLifespanSeconds = 3; // minimum number of seconds a leader should live for
-        const float totalBoidLifespanSeconds = 50;
+        const float totalBoidLifespanSeconds = 120;
         const float minLeaderFollowSeconds = 3;
 
 
