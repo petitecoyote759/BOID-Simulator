@@ -72,7 +72,7 @@ namespace BOIDSimulator
 
             foreach ((int, int) coordinate in updatedGrids)
             {
-                Renderer.RequestDrawGrid(coordinate.Item1, coordinate.Item2);
+                Renderer.DrawGrid(coordinate.Item1, coordinate.Item2);
             }
         }
 
