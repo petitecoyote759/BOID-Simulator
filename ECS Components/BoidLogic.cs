@@ -12,12 +12,20 @@ namespace BOIDSimulator.ECS_Components
         // <<Requirements>> //
         // EC_Entity //
 
+        // <<Public Variabled>> //
         public Vector2 velocity = new Vector2(0, 0);
         public int? targetUid;
         public float followMinDuration;
 
         public bool Active { get => active; set => active = value; }
         private bool active = true;
+
+
+        public static int targetX = 0;
+        public static int targetY = 0;
+
+
+
 
         public EC_BoidLogic()
         {

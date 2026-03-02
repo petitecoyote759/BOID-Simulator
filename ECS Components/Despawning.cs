@@ -65,8 +65,8 @@ namespace BOIDSimulator.ECS_Components
             EC_BoidLogic? boidLogic = (EC_BoidLogic?)ECSHandler.ECSs[typeof(EC_BoidLogic)][uid];
             if (boidLogic is not null)
             {
-                int targetX = boidLogic.Value.targetX;
-                int targetY = boidLogic.Value.targetY;
+                int targetX = EC_BoidLogic.targetX;
+                int targetY = EC_BoidLogic.targetY;
                 if (MathF.Abs(targetX - tileX) + MathF.Abs(targetY - tileY) < rangeSquared)
                 {
                     ECSHandler.FreeUID(uid);
