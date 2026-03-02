@@ -18,6 +18,7 @@ namespace BOIDSimulator
         {
             (TileID[][], float[][]) mapData = MapGenerator.CreateMap(width / scale, height / scale);
             tileMap = mapData.Item1; altitudeMap = mapData.Item2;
+            General.debugger.AddLog($"Map Created, dimentions {width}x{height}");
         }
     }
 }
