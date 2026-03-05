@@ -1,4 +1,5 @@
 ﻿using BOIDSimulator.ECS_Components;
+using ShortTools.General;
 using System.Runtime.CompilerServices;
 
 
@@ -26,10 +27,12 @@ namespace BOIDSimulator
         {
             return new Dictionary<Type, List<IEntityComponent?>>()
             {
-              { typeof(EC_Entity), new List<IEntityComponent?>() },
+              { typeof(EC_SpawnerLogic), new List<IEntityComponent?>() },
+              { typeof(EC_SpawnedLogic), new List<IEntityComponent?>() },
               { typeof(EC_Despawning), new List<IEntityComponent?>() },
               { typeof(EC_BoidLogic), new List<IEntityComponent?>() },
-              { typeof(EC_Pathfinding), new List<IEntityComponent?>() },
+              { typeof(EC_Entity), new List<IEntityComponent?>() },
+              { typeof(EC_PathFinding), new List<IEntityComponent?>() },
               { typeof(EC_Render), new List<IEntityComponent?>() },
             };
         }
@@ -54,29 +57,73 @@ namespace BOIDSimulator
             if (uid >= entities.Count) { return; }
 
             entities[uid] = false;
+            foreach (KeyValuePair<Type, List<IEntityComponent?>> pair in ECSs)
+            {
+                pair.Value[uid]?.Cleanup(uid);
+            }
         }
 
 
 
         // <<Main Functions>> //
         private static long LFT = DateTimeOffset.Now.ToUnixTimeMilliseconds();// last frame time
-        private const int MaxFPS = 60;
+        private const int MaxFPS = 120;
         private const long MaxMsPerFrame = 1000 / MaxFPS;
+        private const int secondsPerFPSUpdate = 10;
+        private const long ticksPerFPSUpdate = secondsPerFPSUpdate * 1000;
+        private static int frameCount = 0;
+        private static long FPSUpateTimer = 0;
         public static void RunLoop()
         {
+            controllerThread.Name = "ECS Controller Thread";
+
             while (running)
             {
                 long now = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-                float dt = (now - LFT) / 1000f;
+                long delta = now - LFT;
+                int makeupTime = (int)(MaxMsPerFrame - delta); // the amount of time 
+                if (makeupTime > 0)
+                {
+                    Thread.Sleep(makeupTime);
+                }
+                float dt = delta / 1000f;
                 LFT = now;
+
+                frameCount++;
+                FPSUpateTimer += delta;
+                if (FPSUpateTimer > ticksPerFPSUpdate)
+                {
+                    FPSUpateTimer -= ticksPerFPSUpdate;
+                    General.debugger.AddLog($"ECS Frame Count {frameCount} over {secondsPerFPSUpdate} giving {frameCount / secondsPerFPSUpdate} FPS", WarningLevel.Debug);
+                    frameCount = 0;
+                }
 
                 Run(dt);
             }
         }
         
+        public static bool IsClosed(int uid)
+        {
+            if (uid < 0 || uid >= entities.Count) { return false; }
+            return entities[uid];
+        }
         
         
-        
+        // Called by renderer thread for synchronisation
+        public static void DoEntityRenderTasks(float dt)
+        {
+            int length = entities.Count;
+
+            for (int uid = 0; uid < length; uid++)
+            {
+                if (entities[uid] == false) { continue; } // entity is closed
+
+                if (ECSs[renderType][uid] is null) { continue; } // Entity does not have the component.
+                if (ECSs[renderType][uid]?.Active == false) { continue; } // Module is disabled
+                ECSs[renderType][uid]?.Action(dt, uid);
+            }
+        }
+
         public static void Run(float dt)
         {
             updatedGrids = new HashSet<(int, int)>();
@@ -90,9 +137,12 @@ namespace BOIDSimulator
                 RunEntitiy(i, dt);
             }
 
-            foreach ((int, int) coordinate in updatedGrids)
+            lock (updatedGrids)
             {
-                Renderer.RequestDrawGrid(coordinate.Item1, coordinate.Item2);
+                foreach ((int, int) coordinate in updatedGrids)
+                {
+                    Renderer.RequestDrawGrid(coordinate.Item1, coordinate.Item2);
+                }
             }
         }
 
@@ -105,6 +155,7 @@ namespace BOIDSimulator
             {
                 if (pair.Value[uid] is null) { continue; } // Entity does not have the component.
                 if (pair.Value[uid]?.Active == false) { continue; } // Module is disabled
+                if (pair.Key == renderType) { continue; } // Render is done on a seperate thread
                 pair.Value[uid]?.Action(dt, uid);
             }
         }
