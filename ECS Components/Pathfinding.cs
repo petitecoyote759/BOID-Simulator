@@ -13,15 +13,13 @@ using Path = System.Collections.Generic.Queue<System.Numerics.Vector2>; // Queue
 
 namespace BOIDSimulator.ECS_Components
 {
-    internal struct EC_Pathfinding : IEntityComponent
+    internal struct EC_PathFinding : IEntityComponent
     {
         // <<Requires>> //
         // EC_Entity //
 
         // <<Public Variables>> //
-        [ThreadStatic]
         public static PathFinder? pather;
-        [ThreadStatic]
         private static PathFinder? intraGridPather;
         public Path? path;
 
@@ -38,7 +36,7 @@ namespace BOIDSimulator.ECS_Components
         // <<Private Variables>> //
 
         // Cached Paths
-        private static CacheCell[][] cachedPaths = Array.Empty<CacheCell[]>();
+        internal static CacheCell[][] cachedPaths = Array.Empty<CacheCell[]>();
 
 
         // <<Constants>> //
@@ -51,34 +49,39 @@ namespace BOIDSimulator.ECS_Components
 
 
 
+        Func<int, int, bool> Walkable;
 
-
-        public EC_Pathfinding(Func<int, int, bool> Walkable)
+        public EC_PathFinding(Func<int, int, bool> Walkable)
         {
+            this.Walkable = Walkable;
             if (Map.tileMap is null) { General.debugger.AddLog("Tilemap was null during pathfinder initialisation.", WarningLevel.Error); return; }
 
-            cachedPaths = new CacheCell[Map.tileMap.Length / General.boidGridSize][];
-            for (int x = 0; x < cachedPaths.Length; x++)
-            {
-                cachedPaths[x] = new CacheCell[Map.tileMap[0].Length / General.boidGridSize];
-                for (int y = 0; y < cachedPaths[0].Length; y++)
-                {
-                    cachedPaths[x][y] = new CacheCell();
-                }
-            }
             if (pather is null)
             {
-                pather = new PathFinder(Walkable, maxDist: 1000, useDiagonals: true);
-                intraGridPather = new PathFinder(Walkable, maxDist: startPathDistance, useDiagonals: true);
+                CreatePathers();
             }
 
             path = null;
         }
 
 
+        private void CreatePathers()
+        {
+            pather = new PathFinder(Walkable, maxDist: 1000, useDiagonals: true);
+            intraGridPather = new PathFinder(Walkable, maxDist: startPathDistance, useDiagonals: true);
+        }
+
+
+
 
         public void Action(float dt, int uid)
         {
+            if (pather is null)
+            {
+                General.debugger.AddLog($"Adding pather...", WarningLevel.Debug);
+                CreatePathers();
+            }
+
             EC_Entity? Me = (EC_Entity?)ECSHandler.ECSs[typeof(EC_Entity)][uid];
             if (Me is null) { General.debugger.AddLog($"Error, entity {uid} has no entity data!", WarningLevel.Error); return; }
 
@@ -87,7 +90,6 @@ namespace BOIDSimulator.ECS_Components
 
             int gridX = tileX / General.boidGridSize;
             int gridY = tileY / General.boidGridSize;
-
 
 
             // Pathfind, and set path if required
@@ -122,8 +124,13 @@ namespace BOIDSimulator.ECS_Components
                 if (path is null || path.Count == 0)
                 {
                     // create new path if none there
-                    path = pather?.GetPath(tileX, tileY, targetX, targetY);
-                    if (path is null || path.Count == 0) { ECSHandler.FreeUID(uid); return; } // no path could be found, so it should not be there.
+                    path = pather.GetPath(tileX, tileY, targetX, targetY);
+                    if (path is null || path.Count == 0) 
+                    { 
+                        General.debugger.AddLog($"No path could be found from ({tileX},{tileY}) to ({targetX},{targetY}), self destructing...", WarningLevel.Debug); 
+                        ECSHandler.FreeUID(uid); 
+                        return; 
+                    } // no path could be found, so it should not be there.
                     // path is not null
                     if (currentCache.Count < pathCacheMax)
                     {
@@ -150,5 +157,8 @@ namespace BOIDSimulator.ECS_Components
             }
             return true;
         }
+
+
+        public void Cleanup(int uid) { path = null; }
     }
 }
