@@ -17,7 +17,7 @@ namespace BOIDSimulator
     public static class General
     {
         public static GraphicsHandler renderer = null;
-        static List<IBoid>[][] boidGrid = new List<IBoid>[0][];
+        
         public static List<IBoid> allBoids = new List<IBoid>();
         public const int boidGridSize = 48;
         const int boids = 10000;
@@ -64,22 +64,29 @@ namespace BOIDSimulator
 
                 int boidGridw = (renderer.screenwidth / (boidGridSize * PPT)) + 1;
                 int boidGridh = (renderer.screenheight / (boidGridSize * PPT)) + 1;
+                debugger.AddLog($"Boidgrid initialising with dimensions of {boidGridw}x{boidGridh}");
 
                 debugger.AddLog($"Width of {boidGridw}x{boidGridh}", WarningLevel.Debug);
-                boidGrid = new List<IBoid>[boidGridw][];
+                EC_BoidLogic.boidGrid = new List<int>[boidGridw][];
+                EC_BoidLogic.leaderGrid = new HashSet<int>[boidGridw][];
+                EC_PathFinding.cachedPaths = new List<Queue<Vector2>>[boidGridw][];
                 for (int x = 0; x < boidGridw; x++)
                 {
-                    boidGrid[x] = new List<IBoid>[boidGridh];
+                    EC_BoidLogic.boidGrid[x] = new List<int>[boidGridh];
+                    EC_BoidLogic.leaderGrid[x] = new HashSet<int>[boidGridh];
+                    EC_PathFinding.cachedPaths[x] = new List<Queue<Vector2>>[boidGridh];
                     for (int y = 0; y < boidGridh; y++)
                     {
-                        boidGrid[x][y] = new List<IBoid>() { };
+                        EC_BoidLogic.boidGrid[x][y] = new List<int>() { };
+                        EC_BoidLogic.leaderGrid[x][y] = new HashSet<int>();
+                        EC_PathFinding.cachedPaths[x][y] = new List<Queue<Vector2>>();
                         //Console.WriteLine($"creating new boid at ({x * boidGridSize}, {y * boidGridSize})");
                     }
                 }
                 EC_BoidLogic.targetX = Map.tileMap.Length / 2;
                 EC_BoidLogic.targetY = Map.tileMap[0].Length / 2;
 
-                AddBoids(random);
+                int spawnerUid = WalkerSpawner.CreateWalkerSpawner();
 
 
                 starting = false;
@@ -161,45 +168,22 @@ namespace BOIDSimulator
 
 
 
-        private static void AddBoids(Random random)
-        {
-            for (int i = 0; i < boids; i++)
-            {
-                AddBoid();
-            }
-        }
-
-
-
         static readonly float dt = 1f / 60f;
         static bool starting = true;
 
 
-        private static void AddBoid()
-        {
-            int position = random.Next(0, 4); // 0-3, going NESW
-
-            int x = 0;
-            int y = 0;
-
-            if (position == 0) { y = (renderer.screenheight / PPT) - 1; x = random.Next(0, renderer.screenwidth / PPT); } // north
-            if (position == 1) { y = random.Next(renderer.screenheight / PPT); x = (renderer.screenwidth / PPT) - 1; } // east
-            if (position == 2) { y = 1; x = random.Next(0, renderer.screenwidth / PPT); } // south
-            if (position == 3) { y = random.Next(0, renderer.screenheight / PPT); x = 1; } // west
-
-            Walker.CreateWalker(new Vector2(x, y));
-        }
+        
 
 
 
 
 
 
-        static bool gridRender = false;
-        static bool paused = false;
-        static bool highlight = false;
-        static bool showLeaders = true;
-        static bool renderRandom = false;
+        public static bool gridRender = false;
+        public static bool paused = false;
+        public static bool highlight = false;
+        public static bool showLeaders = true;
+        public static bool renderRandom = false;
         static IBoid? randomBoid = null;
         internal static bool renderLines = false;
         static Random random = new Random();
