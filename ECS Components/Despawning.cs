@@ -84,5 +84,9 @@ namespace BOIDSimulator.ECS_Components
                 return;
             }
         }
+
+
+
+        public void Cleanup(int uid) { }
     }
 }

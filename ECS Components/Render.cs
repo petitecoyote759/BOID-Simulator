@@ -1,6 +1,7 @@
 ﻿using ShortTools.General;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Text;
@@ -43,12 +44,29 @@ namespace BOIDSimulator.ECS_Components
             int gridX = Me.Value.tileX / Renderer.drawGridSize;
             int gridY = Me.Value.tileY / Renderer.drawGridSize;
 
-            if (gridX != prevGridX || gridY != prevGridY)
+            lock (ECSHandler.updatedGrids)
             {
-                ECSHandler.updatedGrids.Add((prevGridX, prevGridY));
+                if (gridX != prevGridX || gridY != prevGridY)
+                {
+                    ECSHandler.updatedGrids.Add((prevGridX, prevGridY));
+                }
+                ECSHandler.updatedGrids.Add((gridX, gridY));
             }
-            ECSHandler.updatedGrids.Add((gridX, gridY));
             Renderer.RequestEntityDraw(gridX, gridY, uid);
+        }
+
+        public void Cleanup(int uid)
+        {
+            EC_Entity? Me = (EC_Entity?)ECSHandler.ECSs[typeof(EC_Entity)][uid];
+            if (Me is null) { General.debugger.AddLog($"Error, entity {uid} has no entity data!", WarningLevel.Error); return; }
+
+            int gridX = Me.Value.tileX / Renderer.drawGridSize;
+            int gridY = Me.Value.tileY / Renderer.drawGridSize;
+
+            lock (ECSHandler.updatedGrids)
+            {
+                ECSHandler.updatedGrids.Add((gridX, gridY));
+            }
         }
     }
 }

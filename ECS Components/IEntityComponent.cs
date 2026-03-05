@@ -11,5 +11,7 @@ namespace BOIDSimulator.ECS_Components
         public bool Active { get; set; }
 
         public void Action(float dt, int uid);
+
+        public void Cleanup(int uid);
     }
 }
