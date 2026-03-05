@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ShortTools.General;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
@@ -24,9 +25,20 @@ namespace BOIDSimulator.ECS_Components
 
         public void Action(float dt, int uid) 
         {
+            if (Map.tileMap is null) { return; }
+
             // <<Update Positions>> //
+
+            // Bounds checks
+            position.X = float.Clamp(position.X, 0, Map.tileMap.Length);
+            position.Y = float.Clamp(position.Y, 0, Map.tileMap[0].Length);
+
             tileX = (int)position.X;
             tileY = (int)position.Y;
+
+
         }
+
+        public void Cleanup(int uid) { }
     }
 }
