@@ -8,6 +8,36 @@ using System.Threading.Tasks;
 
 namespace BOIDSimulator.ECS_Components
 {
+    public class EntityReference
+    {
+        public int targetUid;
+        public int refereeUid;
+        public bool closed;
+
+        public EntityReference(int targetUid, int refereeUid)
+        {
+            this.targetUid = targetUid;
+            this.refereeUid = refereeUid;
+            this.closed = false;
+        }
+
+        public void Close(bool calledFromTarget)
+        {
+            if (calledFromTarget == false)
+            {
+                bool success = ECSHandler.GetEntityComponent(targetUid, out EC_Entity entityData);
+                if (!success) { ECSHandler.debugger.AddLog($"Entity {targetUid} had no entity data!", WarningLevel.Warning); return; }
+                _ = entityData.selfReferences.Remove(this);
+            }
+
+            targetUid = -1;
+            refereeUid = -1;
+            closed = true;
+        }
+    }
+
+
+
     internal struct EC_Entity : IEntityComponent
     {
         public bool Active { get => active; set => active = value; }
@@ -17,6 +47,8 @@ namespace BOIDSimulator.ECS_Components
         public Vector2 position = new Vector2(0, 0);
         public int tileX = 0;
         public int tileY = 0;
+
+        public HashSet<EntityReference> selfReferences = new HashSet<EntityReference>(); // all references to me
 
         public EC_Entity()
         {
@@ -39,6 +71,13 @@ namespace BOIDSimulator.ECS_Components
 
         }
 
-        public void Cleanup(int uid) { }
+        public void Cleanup(int uid) 
+        { 
+            foreach (EntityReference reference in selfReferences)
+            {
+                reference.Close(true);
+            }
+            selfReferences.Clear();
+        }
     }
 }

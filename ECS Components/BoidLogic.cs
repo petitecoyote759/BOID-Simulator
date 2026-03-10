@@ -17,7 +17,7 @@ namespace BOIDSimulator.ECS_Components
 
         // <<Public Variabled>> //
         public Vector2 velocity = new Vector2(0, 0);
-        public int? targetUid;
+        public EntityReference? leaderReference;
         public float followMinDuration;
 
         public bool Active { get => active; set => active = value; }
