@@ -49,44 +49,7 @@ namespace BOIDSimulator.ECS_Components
                 IsLeader(leaderReference.targetUid) == false || 
                 DateTimeOffset.Now.ToUnixTimeMilliseconds() - leaderFollowStartTime > minLeaderFollowDuration)
             {
-                if (General.showLeadingReason)
-                {
-                    ECSHandler.debugger.AddLog(
-                        $"Follower finding new leader... " +
-                        $"{leaderReference}, " +
-                        $"{leaderReference?.closed}, " +
-                        $"{(leaderReference is null ? "null" : IsLeader(leaderReference.targetUid))}, " +
-                        $"{DateTimeOffset.Now.ToUnixTimeMilliseconds() - leaderFollowStartTime > minLeaderFollowDuration}",
-                        WarningLevel.Debug);
-                }
-
-                PriorityQueue<int, float> leaderQueue = new PriorityQueue<int, float>();
-
-                foreach ((int, int) gridRCoords in gridChecks)
-                {
-                    // gridRCoords -> grid relative coordinates, just add them and check that grid
-                    int targetGridX = gridX + gridRCoords.Item1;
-                    int targetGridY = gridY + gridRCoords.Item2;
-
-                    // <<Bounds Checks>> //
-                    if (targetGridX < 0 || targetGridY < 0) { continue; }
-                    if (targetGridX >= boidGrid.Length || targetGridY >= boidGrid[0].Length) { continue; }
-
-                    foreach (int leaderUid in leaderGrid[targetGridX][targetGridY])
-                    {
-                        if (IsLeader(leaderUid) == false) { continue; }
-
-                        bool success = ECSHandler.GetEntityComponent(leaderUid, out EC_Entity currentEntityInfo);
-                        success &= ECSHandler.GetEntityComponent(leaderUid, out EC_PathFinding pathfindingInfo);
-                        if (success == false) { ECSHandler.debugger.AddLog($"Entity {leaderUid} had no entity or pathfinding info!", WarningLevel.Error); continue; }
-                        float distance = MathF.Abs(Me.position.X - currentEntityInfo.position.X) + MathF.Abs(Me.position.Y - currentEntityInfo.position.Y);
-                        leaderQueue.Enqueue(leaderUid, distance * (pathfindingInfo.path?.Count ?? 1));
-                    }
-                }
-
-                // closest boid, should always be one due to DLA
-                if (leaderQueue.Count == 0) { ECSHandler.debugger.AddLog($"Could not find a leader in the area?", WarningLevel.Warning); return; }
-                leaderReference = new EntityReference(leaderQueue.Dequeue(), uid);
+                GetNewLeader(gridX, gridY, ref Me, uid);
             }
 
             if (leaderReference is null) { ECSHandler.debugger.AddLog($"Follower targetUID was still null", WarningLevel.Error); return; } // will never happen, just to satisfy compiler
@@ -119,18 +82,14 @@ namespace BOIDSimulator.ECS_Components
                     if (target.X < 0 || target.X > (Map.tileMap.Length) - 1) { continue; }
                     if (target.Y < 0 || target.Y > (Map.tileMap[0].Length) - 1) { continue; }
 
-                    if (General.Walkable(Map.tileMap[(int)(target.X)][(int)(target.Y)]) == false)
+                    if (General.Walkable(Map.tileMap[(int)(target.X)][(int)(target.Y)])) { continue; }
+                    Vector2 push = Me.position - target;
+                    if (push.LengthSquared() > 0.1f)
                     {
-                        Vector2 push = Me.position - target;
-                        if (push.LengthSquared() > 0.1f)
-                        {
-                            Vector2 normalVelocity = Vector2.Normalize(velocity);
-                            Vector2 normalPush = Vector2.Normalize(push);
+                        Vector2 normalVelocity = Vector2.Normalize(velocity);
+                        Vector2 normalPush = Vector2.Normalize(push);
 
-                            //velocity = normalPush + (Vector2.Dot(normalPush, normalVelocity) * normalVelocity);
-
-                            velocity += normalPush * seperationConst * followerAcceleration * dt;
-                        }
+                        velocity += normalPush * seperationConst * followerAcceleration * dt;
                     }
                 }
             }
@@ -141,7 +100,9 @@ namespace BOIDSimulator.ECS_Components
             {
                 velocity = followerSpeed * Vector2.Normalize(velocity);
             }
-            float variation = angleVariation * (2 * random.NextSingle() - 1f); // between -1, and 1
+
+            // Vary movement to try and have the boid move side to side.
+            float variation = angleVariation * ((2 * random.NextSingle()) - 1f); // between -1, and 1
             velocity = new Vector2(
                 velocity.X - (velocity.Y * variation),
                 (velocity.X * variation) + velocity.Y); // simplified version of transformation matrix using small angle (cos(a) = 1)
@@ -149,6 +110,40 @@ namespace BOIDSimulator.ECS_Components
             Me.position += velocity * dt;
         }
 
+
+
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void GetNewLeader(int gridX, int gridY, ref EC_Entity Me, int uid)
+        {
+            PriorityQueue<int, float> leaderQueue = new PriorityQueue<int, float>();
+
+            foreach ((int, int) gridRCoords in gridChecks)
+            {
+                // gridRCoords -> grid relative coordinates, just add them and check that grid
+                int targetGridX = gridX + gridRCoords.Item1;
+                int targetGridY = gridY + gridRCoords.Item2;
+
+                // <<Bounds Checks>> //
+                if (targetGridX < 0 || targetGridY < 0) { continue; }
+                if (targetGridX >= boidGrid.Length || targetGridY >= boidGrid[0].Length) { continue; }
+
+                foreach (int leaderUid in leaderGrid[targetGridX][targetGridY])
+                {
+                    if (IsLeader(leaderUid) == false) { continue; }
+
+                    bool success = ECSHandler.GetEntityComponent(leaderUid, out EC_Entity currentEntityInfo);
+                    success &= ECSHandler.GetEntityComponent(leaderUid, out EC_PathFinding pathfindingInfo);
+                    if (success == false) { ECSHandler.debugger.AddLog($"Entity {leaderUid} had no entity or pathfinding info!", WarningLevel.Error); continue; }
+                    float distance = MathF.Abs(Me.position.X - currentEntityInfo.position.X) + MathF.Abs(Me.position.Y - currentEntityInfo.position.Y);
+                    leaderQueue.Enqueue(leaderUid, distance * (pathfindingInfo.path?.Count ?? 1));
+                }
+            }
+
+            // closest boid, should always be one due to DLA
+            if (leaderQueue.Count == 0) { ECSHandler.debugger.AddLog($"Could not find a leader in the area?", WarningLevel.Warning); return; }
+            leaderReference = new EntityReference(leaderQueue.Dequeue(), uid);
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool IsLeader(int uid)
