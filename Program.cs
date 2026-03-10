@@ -45,7 +45,13 @@ namespace BOIDSimulator
         {
             Random random = new Random();
             Thread.CurrentThread.Name = "Main Thread";
-            debugger = new Debugger("Main", WarningLevel.Debug, DebuggerFlag.PrintLogs, DebuggerFlag.WriteLogsToFile, DebuggerFlag.DisplayThread);
+            debugger = new Debugger("Main",
+#if DEBUG
+                WarningLevel.Debug,
+#else
+                WarningLevel.Info,
+#endif
+                DebuggerFlag.PrintLogs, DebuggerFlag.WriteLogsToFile, DebuggerFlag.DisplayThread);
             debugger.DefaultLevel = WarningLevel.Info;
 
             using (renderer = new GraphicsHandler(1920, 1080,

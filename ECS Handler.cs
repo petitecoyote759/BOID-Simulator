@@ -19,7 +19,13 @@ namespace BOIDSimulator
 
         internal static bool running = true;
 
-        internal static Debugger debugger = new Debugger("ECS", WarningLevel.Debug, DebuggerFlag.PrintLogs, DebuggerFlag.WriteLogsToFile, DebuggerFlag.DisplayThread);
+        internal static Debugger debugger = new Debugger("ECS",
+#if DEBUG
+                WarningLevel.Debug,
+#else
+                WarningLevel.Info,
+#endif
+                DebuggerFlag.PrintLogs, DebuggerFlag.WriteLogsToFile, DebuggerFlag.DisplayThread);
 
 
 

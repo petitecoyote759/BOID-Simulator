@@ -17,7 +17,13 @@ namespace BOIDSimulator
         public const int drawGridSize = 64;
         const int boidSize = 4;
 
-        internal static Debugger debugger = new Debugger("Renderer", WarningLevel.Debug, DebuggerFlag.PrintLogs, DebuggerFlag.WriteLogsToFile, DebuggerFlag.DisplayThread);
+        internal static Debugger debugger = new Debugger("Renderer",
+#if DEBUG
+                WarningLevel.Debug,
+#else
+                WarningLevel.Info,
+#endif
+                DebuggerFlag.PrintLogs, DebuggerFlag.WriteLogsToFile, DebuggerFlag.DisplayThread);
 
         private const int MaxFPS = 120;
         private const long MaxMsPerFrame = 1000 / MaxFPS;
