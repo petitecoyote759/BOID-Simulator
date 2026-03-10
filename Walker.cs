@@ -36,7 +36,7 @@ namespace BOIDSimulator
             ECSHandler.ECSs[typeof(EC_BoidLogic)][uid] = new EC_BoidLogic();
             ECSHandler.ECSs[typeof(EC_PathFinding)][uid] = new EC_PathFinding(Walkable);
             ECSHandler.ECSs[typeof(EC_Render)][uid] = new EC_Render(IntPtr.Zero);
-            ECSHandler.ECSs[typeof(EC_SpawnedLogic)][uid] = new EC_SpawnedLogic(spawnerUid);
+            ECSHandler.ECSs[typeof(EC_SpawnedLogic)][uid] = new EC_SpawnedLogic(uid, spawnerUid);
 
             // <<Disable the EAF modules used for leaders>> //
 #pragma warning disable CS8602 // This should absolutely not be null as it is assigned just a few lines up

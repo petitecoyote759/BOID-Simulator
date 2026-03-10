@@ -47,7 +47,8 @@ namespace BOIDSimulator
         public static void Main(string[] args)
         {
             Random random = new Random();
-            debugger = new Debugger(DebuggerFlag.ShortDefault);
+            Thread.CurrentThread.Name = "Main Thread";
+            debugger = new Debugger("Main", WarningLevel.Debug, DebuggerFlag.PrintLogs, DebuggerFlag.WriteLogsToFile, DebuggerFlag.DisplayThread);
             debugger.DefaultLevel = WarningLevel.Info;
 
             using (renderer = new GraphicsHandler(1920, 1080,
@@ -97,10 +98,12 @@ namespace BOIDSimulator
                 HandleUI();
             }
             Renderer.running = false;
+            debugger.AddLog($"Shutting down renderer", WarningLevel.Info); 
+            debugger.Dispose(true);
             ECSHandler.running = false;
 
 
-            debugger.Dispose();
+            debugger.Dispose(true);
         }
 
         private static void HandleUI()

@@ -1,4 +1,5 @@
-﻿using ShortTools.AStar;
+﻿
+using ShortTools.AStar;
 using ShortTools.MagicContainer;
 using System.Numerics;
 using System.Runtime.CompilerServices;
@@ -7,7 +8,6 @@ using Path = System.Collections.Generic.Queue<System.Numerics.Vector2>; // Queue
 using CacheCell = System.Collections.Generic.List<System.Collections.Generic.Queue<System.Numerics.Vector2>>;
 using System.Reflection.Metadata;
 using System.Diagnostics.CodeAnalysis; // List<Path>
-
 
 
 #pragma warning disable IDE0130 // Folder structure does not match, I dont want to change the name of the folder
@@ -22,33 +22,20 @@ namespace BOIDSimulator
     {
         // <<Class Settings>> //
 
-        const float leaderSpeed = 20f; // blocks per second
-        const float followerSpeed = 1.15f * leaderSpeed;
-        const float followerAcceleration = 25f;
-
-        const float destroyZoneRadius = 10f; // how many blocks around the centre are the "kill zone", meaning the BOIDS will be deleted
-
-        const int leaderDensityMin = 1; // If the leaders in a 3x3 area is less than this, then they will self promote,
-        const int leaderDensityMax = 2; // however if over this value, it will stop being a leader
+        
 
         
 
-
-        const float leaderNodeMinDistance = 0.5f; // How close a leader needs to be to a node for it to register as visited in blocks
-
-        const float followerChargeRange = 80f;
+        
 
 
 
         
 
-        const float minLeaderLifespanSeconds = 3; // minimum number of seconds a leader should live for
-        const float minLeaderFollowSeconds = 3;
+        
 
 
-        const float alignmentConst = 0.2f;
-        const int blockCheckRange = 6;
-        const float seperationConst = 0.4f;
+        
 
 
 
@@ -87,13 +74,10 @@ namespace BOIDSimulator
         
 
         
-        // Cached counts
-        private static List<NaturioBoid>[][] leaderGrid = Array.Empty<List<NaturioBoid>[]>();
+        
 
 
-        // Leader Timegate
-        private long leaderCreationTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-        private long leaderFollowStartTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+        
         
 
 
@@ -102,15 +86,7 @@ namespace BOIDSimulator
 
 
         // <<Modified Constants>> //
-        const float leaderNodeMinDistanceSquared = leaderNodeMinDistance * leaderNodeMinDistance; // Precompute this to speed up itterations
-
-        const float followerSpeedSquared = followerSpeed * followerSpeed;
-
         
-
-        const long minLeaderLifespan = (int)(1000 * minLeaderLifespanSeconds);
-        const long minLeaderFollowDuration = (int)(1000 * minLeaderFollowSeconds);
-        const long totalBoidLifespan = (int)(1000 * totalBoidLifespanSeconds);
 
 
         // <<Constructors>> //
@@ -163,62 +139,7 @@ namespace BOIDSimulator
         {
 
 
-            // <<Dynamic Leader Allocation>> //
-
-            int leaderCount = CountLeaders(boidGrid);
-
-
-            if (!leader && leaderCount < leaderDensityMin) // become leader
-            {
-                leaderGrid[gridX][gridY].Add(this);
-                this.leader = true;
-                this.velocity = new Vector2();
-                this.leaderCreationTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-                this.currentLeader = null;
-            }
-            else if (leader && leaderCount > leaderDensityMax && // become follower
-                DateTimeOffset.Now.ToUnixTimeMilliseconds() - leaderCreationTime > minLeaderLifespan) // has lived for a required amount of time
-            {
-                _ = leaderGrid[gridX][gridY].Remove(this);
-                this.leader = false;
-                path = null;
-            }
-
-
-
-            // 2 options, leader or not.
-            if (leader)
-            {
-                LeaderAction(boidGrid, gridSize, dt);
-            }
-            else
-            {
-                FollowerAction(boidGrid, gridSize, dt);
-            }
-
-            // <<Update Positions>> //
-            // Bounds checks
-            position.X = float.Clamp(position.X, 0, General.map.Length);
-            position.Y = float.Clamp(position.Y, 0, General.map[0].Length);
-
-            // Grids
-            int oldGridX = gridX;
-            int oldGridY = gridY;
-            gridX = (int)(position.X / General.boidGridSize);
-            gridY = (int)(position.Y / General.boidGridSize);
-            if (oldGridX != gridX || oldGridY != gridY)
-            {
-                _ = boidGrid[oldGridX][oldGridY].Remove(this);
-                boidGrid[gridX][gridY].Add(this);
-
-                if (leader)
-                {
-                    _ = leaderGrid[oldGridX][oldGridY].Remove(this);
-                    leaderGrid[gridX][gridY].Add(this);
-                }
-            }
-
-            tileX = (int)position.X; tileY = (int)position.Y;
+            
         }
 
 
@@ -372,33 +293,7 @@ namespace BOIDSimulator
 
 
 
-        // <<Misc Functions>> //
-
-        // All grids nearby
-        private static readonly (int, int)[] gridChecks = new (int, int)[] { 
-            (-1, -1), (0, -1), (1, -1), 
-            (-1,  0), (0,  0), (1,  0), 
-            (-1,  1), (0,  1), (1,  1) };
-        private int CountLeaders(List<IBoid>[][] boidGrid)
-        {
-            int leaderCount = 0;
-
-
-            foreach ((int, int) gridRCoords in gridChecks)
-            {
-                // gridRCoords -> grid relative coordinates, just add them and check that grid
-                int targetGridX = gridX + gridRCoords.Item1;
-                int targetGridY = gridY + gridRCoords.Item2;
-
-                // <<Bounds Checks>> //
-                if (targetGridX < 0 || targetGridY < 0) { continue; }
-                if (targetGridX >= boidGrid.Length || targetGridY >= boidGrid[0].Length) { continue; }
-
-                leaderCount += leaderGrid[targetGridX][targetGridY].Count;
-            }
-
-            return leaderCount;
-        }
+        
 
 
         private void DestroySelf(List<IBoid>[][] boidGrid)
@@ -411,14 +306,6 @@ namespace BOIDSimulator
             _ = boidGrid[gridX][gridY].Remove(this);
             leader = false;
         }
-        private static bool Walkable(int x, int y)
-        {
-            // <<Bounds Checks>> //
-            if (x < 0 || y < 0) { return false; }
-            if (x >= General.map.Length) { return false; }
-            if (y >= General.map[0].Length) { return false; }
-
-            return General.Walkable(General.map[x][y]);
-        }
+        
     }
 }
