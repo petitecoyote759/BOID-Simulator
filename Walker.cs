@@ -32,7 +32,7 @@ namespace BOIDSimulator
 
             // <<EAF Creation>> //
             ECSHandler.ECSs[typeof(EC_Entity)][uid] = Me;
-            ECSHandler.ECSs[typeof(EC_Despawning)][uid] = new EC_Despawning(deletionRadiusSquared);
+            ECSHandler.ECSs[typeof(EC_Despawning)][uid] = new EC_Despawning(deletionRadius);
             ECSHandler.ECSs[typeof(EC_BoidLogic)][uid] = new EC_BoidLogic();
             ECSHandler.ECSs[typeof(EC_PathFinding)][uid] = new EC_PathFinding(Walkable);
             ECSHandler.ECSs[typeof(EC_Render)][uid] = new EC_Render(IntPtr.Zero);

@@ -145,6 +145,16 @@ namespace BOIDSimulator
                     debugger.AddLog(renderRandom ? "Disabling Render Random" : "Rendering Random");
                     renderRandom = !renderRandom;
                 }
+                else if (input == "SLR")
+                {
+                    debugger.AddLog(showLeadingReason ? "Disabling Show Leading Reason" : "Enabling Show Leading Reason");
+                    showLeadingReason = !showLeadingReason;
+                }
+                else if (input == "REFRESH")
+                {
+                    refresh = true;
+                    debugger.AddLog($"Refreshing!");
+                }
                 else if (input == "HELP")
                 {
                     Console.WriteLine("Options:\n" +
@@ -153,7 +163,9 @@ namespace BOIDSimulator
                         "\nh - highlight tiles" +
                         "\nsl - switch show leaders" +
                         "\nrl - switch rendering of grid lines" +
-                        "\nrr - switch render random - renders a random boid");
+                        "\nrr - switch render random - renders a random boid" +
+                        "\nslr - show leading reason (debugging)" +
+                        "\nrefresh - refresh the screen");
                 }
             }
         }
@@ -187,6 +199,8 @@ namespace BOIDSimulator
         public static bool highlight = false;
         public static bool showLeaders = true;
         public static bool renderRandom = false;
+        public static bool showLeadingReason = false;
+        public static bool refresh = true;
         static IBoid? randomBoid = null;
         internal static bool renderLines = false;
         static Random random = new Random();

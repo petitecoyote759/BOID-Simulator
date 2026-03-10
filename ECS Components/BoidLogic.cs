@@ -35,6 +35,7 @@ namespace BOIDSimulator.ECS_Components
 
         // <<Private Variables>> //
 
+        private static Random random = new Random();
         internal static List<int>[][] boidGrid = new List<int>[0][];
 
         // Cached counts
@@ -58,11 +59,13 @@ namespace BOIDSimulator.ECS_Components
         const int blockCheckRange = 6;
         const float seperationConst = 0.4f;
 
+        const float angleVariation = 0.05f;
+
         // Leader Timegate
         private long leaderCreationTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
         private long leaderFollowStartTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
 
-        const float minLeaderLifespanSeconds = 3; // minimum number of seconds a leader should live for
+        const float minLeaderLifespanSeconds = 10; // minimum number of seconds a leader should live for
         const float minLeaderFollowSeconds = 3;
 
         const float totalBoidLifespanSeconds = 120;
@@ -72,7 +75,7 @@ namespace BOIDSimulator.ECS_Components
 
         const float leaderNodeMinDistance = 0.5f; // How close a leader needs to be to a node for it to register as visited in blocks
 
-        const float followerChargeRange = 80f;
+        const float followerChargeRange = 140f;
 
 
 
@@ -102,7 +105,8 @@ namespace BOIDSimulator.ECS_Components
 
 
 
-
+        int oldGridX = -1;
+        int oldGridY = -1;
         public void Action(float dt, int uid)
         {
             EC_Entity? MeNullable = (EC_Entity?)ECSHandler.ECSs[typeof(EC_Entity)][uid];
@@ -116,6 +120,18 @@ namespace BOIDSimulator.ECS_Components
 
             int gridX = tileX / General.boidGridSize;
             int gridY = tileY / General.boidGridSize;
+
+            if (this.oldGridX != gridX || this.oldGridY != gridY)
+            {
+                if (leader)
+                {
+                    leaderGrid[this.oldGridX][this.oldGridY].Remove(uid);
+                    leaderGrid[gridX][gridY].Add(uid);
+                }
+
+                this.oldGridX = gridX;
+                this.oldGridY = gridY;
+            }
 
 
 
@@ -137,8 +153,11 @@ namespace BOIDSimulator.ECS_Components
                 DateTimeOffset.Now.ToUnixTimeMilliseconds() - leaderCreationTime > minLeaderLifespan) // has lived for a required amount of time
             {
                 ECSHandler.debugger.AddLog($"Stepping down...", WarningLevel.Debug);
-                _ = leaderGrid[gridX][gridY].Remove(uid);
+                
+                bool success = leaderGrid[gridX][gridY].Remove(uid);
+                if (!success) { ECSHandler.debugger.AddLog($"Could not remove boid from leadergrid {gridX}x{gridY}", WarningLevel.Warning); }
                 this.leader = false;
+                leaderReference = null;
 
                 // To set the path to null, a copy needs to be made and then value changed, then put back
                 EC_PathFinding? myPathFinding = (EC_PathFinding?)ECSHandler.ECSs[typeof(EC_PathFinding)][uid];
@@ -198,7 +217,15 @@ namespace BOIDSimulator.ECS_Components
         private static readonly (int, int)[] gridChecks = new (int, int)[] {
             (-1, -1), (0, -1), (1, -1),
             (-1,  0), (0,  0), (1,  0),
-            (-1,  1), (0,  1), (1,  1) };
+            (-1,  1), (0,  1), (1,  1),
+        
+            (-2, -2), (-1, -2), (0, -2), (1, -2), (2, -2),
+            (-2, -1),                             (2, -1),
+            (-2,  0),                             (2,  0),
+            (-2,  1),                             (2,  1),
+            (-2,  2), (-1,  2), (0,  2), (1,  2), (2,  2)
+        
+        };
         private int CountLeaders(List<int>[][] boidGrid, int gridX, int gridY)
         {
             int leaderCount = 0;

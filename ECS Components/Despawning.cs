@@ -15,7 +15,7 @@ namespace BOIDSimulator.ECS_Components
 
         // <<Public Variables>> //
 
-        public float rangeSquared;
+        public float deletionRange;
 
         public bool Active { get => active; set => active = value; }
         private bool active = true;
@@ -44,9 +44,9 @@ namespace BOIDSimulator.ECS_Components
 
 
 
-        public EC_Despawning(float rangeSquared)
+        public EC_Despawning(float deletionRange)
         {
-            this.rangeSquared = rangeSquared;
+            this.deletionRange = deletionRange;
             this.creationTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
         }
 
@@ -67,7 +67,7 @@ namespace BOIDSimulator.ECS_Components
             {
                 int targetX = EC_BoidLogic.targetX;
                 int targetY = EC_BoidLogic.targetY;
-                if (MathF.Abs(targetX - tileX) + MathF.Abs(targetY - tileY) < rangeSquared)
+                if (MathF.Abs(targetX - tileX) + MathF.Abs(targetY - tileY) < deletionRange)
                 {
                     ECSHandler.FreeUID(uid);
                     return;

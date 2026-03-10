@@ -14,8 +14,6 @@ namespace BOIDSimulator
     {
         public static bool running = true;
 
-        private static bool first = true;
-
         public const int drawGridSize = 64;
         const int boidSize = 4;
 
@@ -61,9 +59,9 @@ namespace BOIDSimulator
             int width = (int)MathF.Ceiling(Map.tileMap.Length / (float)drawGridSize);
             int height = (int)MathF.Ceiling(Map.tileMap[0].Length / (float)drawGridSize);
 
-            if (first)
+            if (General.refresh)
             {
-                first = false;
+                General.refresh = false;
                 debugger.AddLog($"Starting full map render at {DateTimeOffset.Now.ToUnixTimeMilliseconds()} with dimentions {width}x{height}", WarningLevel.Debug);
                 for (int x = 0; x < width; x++)
                 {

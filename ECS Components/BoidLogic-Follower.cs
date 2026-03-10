@@ -7,6 +7,7 @@ using System.Text;
 using ShortTools.General;
 using System.Threading.Tasks;
 using Path = System.Collections.Generic.Queue<System.Numerics.Vector2>;
+using System.Security.Cryptography;
 
 namespace BOIDSimulator.ECS_Components
 {
@@ -25,10 +26,10 @@ namespace BOIDSimulator.ECS_Components
             int gridX = tileX / General.boidGridSize;
             int gridY = tileY / General.boidGridSize;
 
-            if (MathF.Abs(targetX - tileX) + MathF.Abs(targetY - tileY) < followerChargeRange) // Charging
+            if (MathF.Abs(targetX - tileX) + MathF.Abs(targetY - tileY) < followerChargeRange + destroyZoneRadius) // Charging
             {
                 Vector2 step = Vector2.Normalize(new Vector2(targetX, targetY) - position) * followerSpeed * dt; // the distance to step.
-                position += step;
+                Me.position += step;
             }
             else
             {
@@ -48,6 +49,17 @@ namespace BOIDSimulator.ECS_Components
                 IsLeader(leaderReference.targetUid) == false || 
                 DateTimeOffset.Now.ToUnixTimeMilliseconds() - leaderFollowStartTime > minLeaderFollowDuration)
             {
+                if (General.showLeadingReason)
+                {
+                    ECSHandler.debugger.AddLog(
+                        $"Follower finding new leader... " +
+                        $"{leaderReference}, " +
+                        $"{leaderReference?.closed}, " +
+                        $"{(leaderReference is null ? "null" : IsLeader(leaderReference.targetUid))}, " +
+                        $"{DateTimeOffset.Now.ToUnixTimeMilliseconds() - leaderFollowStartTime > minLeaderFollowDuration}",
+                        WarningLevel.Debug);
+                }
+
                 PriorityQueue<int, float> leaderQueue = new PriorityQueue<int, float>();
 
                 foreach ((int, int) gridRCoords in gridChecks)
@@ -64,15 +76,16 @@ namespace BOIDSimulator.ECS_Components
                     {
                         if (IsLeader(leaderUid) == false) { continue; }
 
-                        EC_Entity? currentEntityInfo = (EC_Entity?)ECSHandler.ECSs[typeof(EC_Entity)][leaderUid];
-                        if (currentEntityInfo is null) { ECSHandler.debugger.AddLog($"Entity {leaderUid} had no entity info!", WarningLevel.Error); continue; }
-                        float distance = MathF.Abs(Me.position.X - currentEntityInfo.Value.position.X) + MathF.Abs(Me.position.Y - currentEntityInfo.Value.position.Y);
-                        leaderQueue.Enqueue(leaderUid, distance);
+                        bool success = ECSHandler.GetEntityComponent(leaderUid, out EC_Entity currentEntityInfo);
+                        success &= ECSHandler.GetEntityComponent(leaderUid, out EC_PathFinding pathfindingInfo);
+                        if (success == false) { ECSHandler.debugger.AddLog($"Entity {leaderUid} had no entity or pathfinding info!", WarningLevel.Error); continue; }
+                        float distance = MathF.Abs(Me.position.X - currentEntityInfo.position.X) + MathF.Abs(Me.position.Y - currentEntityInfo.position.Y);
+                        leaderQueue.Enqueue(leaderUid, distance * (pathfindingInfo.path?.Count ?? 1));
                     }
                 }
 
                 // closest boid, should always be one due to DLA
-                if (leaderQueue.Count == 0) { return; }
+                if (leaderQueue.Count == 0) { ECSHandler.debugger.AddLog($"Could not find a leader in the area?", WarningLevel.Warning); return; }
                 leaderReference = new EntityReference(leaderQueue.Dequeue(), uid);
             }
 
@@ -128,6 +141,10 @@ namespace BOIDSimulator.ECS_Components
             {
                 velocity = followerSpeed * Vector2.Normalize(velocity);
             }
+            float variation = angleVariation * (2 * random.NextSingle() - 1f); // between -1, and 1
+            velocity = new Vector2(
+                velocity.X - (velocity.Y * variation),
+                (velocity.X * variation) + velocity.Y); // simplified version of transformation matrix using small angle (cos(a) = 1)
 
             Me.position += velocity * dt;
         }
