@@ -26,6 +26,7 @@ namespace BOIDSimulator
         private static int frameCount = 0;
         private static long FPSUpateTimer = 0;
         static long LFT = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+        private const int PPT = 1;
         internal static void MainLoop()
         {
             if (Map.tileMap is null) { return; }
@@ -142,7 +143,7 @@ namespace BOIDSimulator
 
             int width = Map.tileMap.Length;
             int height = Map.tileMap[0].Length;
-            int size = General.PPT; // pixels per tile
+            int size = PPT; // pixels per tile
 
             for (int x = gridX * drawGridSize; x < (gridX + 1) * drawGridSize; x++)
             {
@@ -182,10 +183,10 @@ namespace BOIDSimulator
                 if (boidLogic.Value.leader && General.showLeaders)
                 {
                     General.renderer.SetPixel(
-                    (int)((entityData.Value.position.X - (boidSize * 2)) * General.PPT),
-                    (int)((entityData.Value.position.Y - (boidSize * 2)) * General.PPT),
-                    boidSize * 4 * General.PPT,
-                    boidSize * 4 * General.PPT,
+                    (int)((entityData.Value.position.X - (boidSize * 2)) * PPT),
+                    (int)((entityData.Value.position.Y - (boidSize * 2)) * PPT),
+                    boidSize * 4 * PPT,
+                    boidSize * 4 * PPT,
                     150,
                     100,
                     255
@@ -195,10 +196,10 @@ namespace BOIDSimulator
             }
 
             General.renderer.SetPixel(
-            (int)(entityData.Value.position.X * General.PPT),
-            (int)(entityData.Value.position.Y * General.PPT),
-            boidSize * General.PPT,
-            boidSize * General.PPT,
+            (int)(entityData.Value.position.X * PPT),
+            (int)(entityData.Value.position.Y * PPT),
+            boidSize * PPT,
+            boidSize * PPT,
             255,
             200,
             100

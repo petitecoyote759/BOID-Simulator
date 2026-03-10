@@ -41,9 +41,6 @@ namespace BOIDSimulator
             };
         }
 
-
-        public const int PPT = 1; // pixels per tile
-
         public static void Main(string[] args)
         {
             Random random = new Random();
@@ -60,11 +57,11 @@ namespace BOIDSimulator
 
                 renderer.Pause();
 
-                Map.CreateMap(renderer.screenwidth / PPT, renderer.screenheight / PPT);
+                Map.CreateMap(renderer.screenwidth, renderer.screenheight);
 
 
-                int boidGridw = (renderer.screenwidth / (boidGridSize * PPT)) + 1;
-                int boidGridh = (renderer.screenheight / (boidGridSize * PPT)) + 1;
+                int boidGridw = (renderer.screenwidth / (boidGridSize)) + 1;
+                int boidGridh = (renderer.screenheight / (boidGridSize)) + 1;
                 debugger.AddLog($"Boidgrid initialising with dimensions of {boidGridw}x{boidGridh}");
 
                 debugger.AddLog($"Width of {boidGridw}x{boidGridh}", WarningLevel.Debug);
