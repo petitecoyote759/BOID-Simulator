@@ -1,4 +1,6 @@
-﻿using System;
+﻿using ILGPU.Util;
+using ShortTools.General;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
@@ -14,6 +16,9 @@ namespace BOIDSimulator.ECS_Components
 
         public const int max = 10000;
         public int current = 0;
+
+        public HashSet<int> spawnedUids = new HashSet<int>();
+
         public float MaxSpawnsPerSecond 
         { 
             get => maxSpawnsPerSecond; 
@@ -43,6 +48,7 @@ namespace BOIDSimulator.ECS_Components
             {
                 spawnTimer -= secondsPerSpawn;
                 int spawnedUid = creatorFunc();
+                _ = spawnedUids.Add(spawnedUid);
 
                 current++;
             }
@@ -50,7 +56,15 @@ namespace BOIDSimulator.ECS_Components
 
         public void Cleanup(int uid)
         {
-
+            lock (spawnedUids)
+            {
+                foreach (int spawnedUid in spawnedUids)
+                {
+                    bool success = ECSHandler.GetEntityComponent(spawnedUid, out EC_SpawnedLogic logic);
+                    if (!success) { ECSHandler.debugger.AddLog($"Spawned entity reference has an issue!", WarningLevel.Error); }
+                    logic.spawnerUid = -1;
+                }
+            }
         }
     }
 }

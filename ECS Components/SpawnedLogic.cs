@@ -12,8 +12,21 @@ namespace BOIDSimulator.ECS_Components
         public bool Active { get => active; set => active = value; }
         private bool active = false;
 
-        int spawnerUid = 0;
-        public EC_SpawnedLogic(int spawnerUid) { this.spawnerUid = spawnerUid; }
+        public int spawnerUid = -1;
+        public EC_SpawnedLogic(int uid, int spawnerUid) 
+        { 
+            this.spawnerUid = spawnerUid; 
+            if (spawnerUid == -1) { ECSHandler.debugger.AddLog($"Given spawner UID was -1, something went wrong", WarningLevel.Error); return; }
+
+            
+            bool success = ECSHandler.GetEntityComponent(spawnerUid, out EC_SpawnerLogic spawner);
+            if (!success) { ECSHandler.debugger.AddLog($"Given spawner {spawnerUid} did not have a spawner logic component!", WarningLevel.Error); return; }
+
+            lock (spawner.spawnedUids)
+            {
+                _ = spawner.spawnedUids.Add(uid);
+            }
+        }
 
 
         public void Action(float dt, int uid) { }
