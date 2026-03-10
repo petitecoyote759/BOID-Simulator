@@ -19,6 +19,8 @@ namespace BOIDSimulator
 
         internal static bool running = true;
 
+        internal static Debugger debugger = new Debugger("ECS", WarningLevel.Debug, DebuggerFlag.PrintLogs, DebuggerFlag.WriteLogsToFile, DebuggerFlag.DisplayThread);
+
 
 
 
@@ -94,12 +96,14 @@ namespace BOIDSimulator
                 if (FPSUpateTimer > ticksPerFPSUpdate)
                 {
                     FPSUpateTimer -= ticksPerFPSUpdate;
-                    General.debugger.AddLog($"ECS Frame Count {frameCount} over {secondsPerFPSUpdate} giving {frameCount / secondsPerFPSUpdate} FPS", WarningLevel.Debug);
+                    debugger.AddLog($"ECS Frame Count {frameCount} over {secondsPerFPSUpdate} giving {frameCount / secondsPerFPSUpdate} FPS", WarningLevel.Debug);
                     frameCount = 0;
                 }
 
                 Run(dt);
             }
+            debugger.AddLog($"Shutting down ECS", WarningLevel.Info);
+            debugger.Dispose(true);
         }
         
         public static bool IsClosed(int uid)
@@ -122,6 +126,14 @@ namespace BOIDSimulator
                 if (ECSs[renderType][uid]?.Active == false) { continue; } // Module is disabled
                 ECSs[renderType][uid]?.Action(dt, uid);
             }
+
+            lock (updatedGrids)
+            {
+                foreach ((int, int) coordinate in updatedGrids)
+                {
+                    Renderer.RequestDrawGrid(coordinate.Item1, coordinate.Item2);
+                }
+            }
         }
 
         public static void Run(float dt)
@@ -135,14 +147,6 @@ namespace BOIDSimulator
                 if (entities[i] == false) { continue; } // entity is closed
 
                 RunEntitiy(i, dt);
-            }
-
-            lock (updatedGrids)
-            {
-                foreach ((int, int) coordinate in updatedGrids)
-                {
-                    Renderer.RequestDrawGrid(coordinate.Item1, coordinate.Item2);
-                }
             }
         }
 
@@ -159,5 +163,30 @@ namespace BOIDSimulator
                 pair.Value[uid]?.Action(dt, uid);
             }
         }
+
+
+
+
+
+
+        public static bool GetEntityComponent<T>(int uid, out T component) where T : IEntityComponent
+        {
+            T? nullableComponent = (T?)ECSs[typeof(T)][uid];
+            if (nullableComponent is null) { component = default(T); return false; }
+
+            component = (T)nullableComponent;
+            return true;
+        }
+
+        public static bool SetEntitiyComponent<T>(int uid, T component) where T : IEntityComponent
+        {
+            Type componentType = typeof(T);
+
+            if (ECSs[componentType] is null) { return false; }
+
+            ECSs[typeof(T)][uid] = component;
+            return true;
+        }
     }
+
 }

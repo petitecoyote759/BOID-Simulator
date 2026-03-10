@@ -4,6 +4,7 @@ using ShortTools.PlanetaryForge;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -15,10 +16,10 @@ namespace BOIDSimulator
 
         private static bool first = true;
 
-        public const int drawGridSize = 16;
-        const int boidSize = 1;
+        public const int drawGridSize = 64;
+        const int boidSize = 4;
 
-
+        internal static Debugger debugger = new Debugger("Renderer", WarningLevel.Debug, DebuggerFlag.PrintLogs, DebuggerFlag.WriteLogsToFile, DebuggerFlag.DisplayThread);
 
         private const int MaxFPS = 120;
         private const long MaxMsPerFrame = 1000 / MaxFPS;
@@ -30,7 +31,7 @@ namespace BOIDSimulator
         internal static void MainLoop()
         {
             if (Map.tileMap is null) { return; }
-            if (running == false) { return; }
+            if (running == false) { debugger.AddLog($"Shutting down renderer", WarningLevel.Info); debugger.Dispose(true); return; }
 
 
 
@@ -50,20 +51,20 @@ namespace BOIDSimulator
             if (FPSUpateTimer > ticksPerFPSUpdate)
             {
                 FPSUpateTimer -= ticksPerFPSUpdate;
-                General.debugger.AddLog($"Renderer Frame Count {frameCount} over {secondsPerFPSUpdate} giving {frameCount / secondsPerFPSUpdate} FPS", WarningLevel.Debug);
+                debugger.AddLog($"Renderer Frame Count {frameCount} over {secondsPerFPSUpdate} giving {frameCount / secondsPerFPSUpdate} FPS", WarningLevel.Debug);
                 frameCount = 0;
             }
 
 
 
             // <<Initial Rendering>> //
-            int width = Map.tileMap.Length / drawGridSize;
-            int height = Map.tileMap[0].Length / drawGridSize;
+            int width = (int)MathF.Ceiling(Map.tileMap.Length / (float)drawGridSize);
+            int height = (int)MathF.Ceiling(Map.tileMap[0].Length / (float)drawGridSize);
 
             if (first)
             {
                 first = false;
-                General.debugger.AddLog($"Starting full map render at {DateTimeOffset.Now.ToUnixTimeMilliseconds()} with dimentions {width}x{height}", WarningLevel.Debug);
+                debugger.AddLog($"Starting full map render at {DateTimeOffset.Now.ToUnixTimeMilliseconds()} with dimentions {width}x{height}", WarningLevel.Debug);
                 for (int x = 0; x < width; x++)
                 {
                     for (int y = 0; y < height; y++)
@@ -71,7 +72,7 @@ namespace BOIDSimulator
                         DrawGrid(x, y);
                     }
                 }
-                General.debugger.AddLog($"Completed full map render at {DateTimeOffset.Now.ToUnixTimeMilliseconds()}", WarningLevel.Debug);
+                debugger.AddLog($"Completed full map render at {DateTimeOffset.Now.ToUnixTimeMilliseconds()}", WarningLevel.Debug);
             }
 
 
@@ -95,9 +96,26 @@ namespace BOIDSimulator
                     }
                 }
             }
+            DrawEntities();
         }
 
 
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void DrawEntities()
+        {
+            lock (entitiesToDraw)
+            {
+                foreach (KeyValuePair<(int, int), HashSet<int>> pair in entitiesToDraw)
+                {
+                    foreach (int uid in pair.Value)
+                    {
+                        RenderBoid(uid);
+                    }
+                }
+                entitiesToDraw.Clear();
+            }
+        }
 
 
 
@@ -122,7 +140,7 @@ namespace BOIDSimulator
 
         private static void DrawGrid(int gridX, int gridY)
         {
-            if (Map.tileMap is null || Map.altitudeMap is null) { General.debugger.AddLog($"Attempted to draw grid {gridX}x{gridY} when map was null", WarningLevel.Warning); return; }
+            if (Map.tileMap is null || Map.altitudeMap is null) { debugger.AddLog($"Attempted to draw grid {gridX}x{gridY} when map was null", WarningLevel.Warning); return; }
 
             int width = Map.tileMap.Length;
             int height = Map.tileMap[0].Length;
@@ -138,20 +156,6 @@ namespace BOIDSimulator
                     byte g = (byte)(colours.Item2 * ((3 + Map.altitudeMap[x][y]) / 4f));
                     byte b = (byte)(colours.Item3 * ((3 + Map.altitudeMap[x][y]) / 4f));
                     General.renderer.SetPixel(x * size, y * size, size, size, r, g, b);
-                }
-            }
-
-            if (entitiesToDraw.ContainsKey((gridX, gridY)))
-            {
-                HashSet<int> entities = entitiesToDraw[(gridX, gridY)];
-                lock (entities)
-                {
-                    foreach (int uid in entities)
-                    {
-                        if (ECSHandler.entities[uid] == false) { continue; } // Closed
-                        RenderBoid(uid);
-                    }
-                    entities.Clear();
                 }
             }
         }
@@ -171,7 +175,7 @@ namespace BOIDSimulator
         private static void RenderBoid(int uid)
         {
             EC_Entity? entityData = (EC_Entity?)ECSHandler.ECSs[typeof(EC_Entity)][uid];
-            if (entityData is null) { General.debugger.AddLog($"Entity {uid} has no entity data, flagged {ECSHandler.entities[uid]} in the entity table.", WarningLevel.Error); return; }
+            if (entityData is null) { debugger.AddLog($"Entity {uid} has no entity data, flagged {ECSHandler.entities[uid]} in the entity table.", WarningLevel.Error); return; }
 
             EC_BoidLogic? boidLogic = (EC_BoidLogic?)ECSHandler.ECSs[typeof(EC_BoidLogic)][uid];
             if (boidLogic is not null)
