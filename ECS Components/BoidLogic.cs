@@ -106,7 +106,7 @@ namespace BOIDSimulator.ECS_Components
         public void Action(float dt, int uid)
         {
             EC_Entity? MeNullable = (EC_Entity?)ECSHandler.ECSs[typeof(EC_Entity)][uid];
-            if (MeNullable is null) { General.debugger.AddLog($"Error, entity {uid} has no entity data!", WarningLevel.Error); return; }
+            if (MeNullable is null) { ECSHandler.debugger.AddLog($"Error, entity {uid} has no entity data!", WarningLevel.Error); return; }
             EC_Entity Me = (EC_Entity)MeNullable;
 
             Vector2 position = Me.position;
@@ -130,19 +130,19 @@ namespace BOIDSimulator.ECS_Components
                 this.leader = true;
                 this.velocity = new Vector2();
                 this.leaderCreationTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-                this.targetUid = null;
-                General.debugger.AddLog($"Stepping up...", WarningLevel.Debug);
+                this.leaderReference = null;
+                ECSHandler.debugger.AddLog($"Stepping up...", WarningLevel.Debug);
             }
             else if (leader && leaderCount > leaderDensityMax && // become follower
                 DateTimeOffset.Now.ToUnixTimeMilliseconds() - leaderCreationTime > minLeaderLifespan) // has lived for a required amount of time
             {
-                General.debugger.AddLog($"Stepping down...", WarningLevel.Debug);
+                ECSHandler.debugger.AddLog($"Stepping down...", WarningLevel.Debug);
                 _ = leaderGrid[gridX][gridY].Remove(uid);
                 this.leader = false;
 
                 // To set the path to null, a copy needs to be made and then value changed, then put back
                 EC_PathFinding? myPathFinding = (EC_PathFinding?)ECSHandler.ECSs[typeof(EC_PathFinding)][uid];
-                if (myPathFinding is null) { General.debugger.AddLog($"Error, entity {uid} has no pathing data, despite being a leader!", WarningLevel.Error); return; }
+                if (myPathFinding is null) { ECSHandler.debugger.AddLog($"Error, entity {uid} has no pathing data, despite being a leader!", WarningLevel.Error); return; }
 
                 EC_PathFinding myPathFindingNN = myPathFinding.Value; // not null
                 myPathFindingNN.path = null;
@@ -159,7 +159,7 @@ namespace BOIDSimulator.ECS_Components
             }
             else
             {
-                FollowerAction(boidGrid, General.boidGridSize, dt, ref Me);
+                FollowerAction(boidGrid, General.boidGridSize, dt, uid, ref Me);
             }
 
             // <<Update Positions>> //
@@ -225,7 +225,7 @@ namespace BOIDSimulator.ECS_Components
         public void Cleanup(int uid)
         {
             EC_Entity? Me = (EC_Entity?)ECSHandler.ECSs[typeof(EC_Entity)][uid];
-            if (Me is null) { General.debugger.AddLog($"Error, entity {uid} has no entity data during cleanup!", WarningLevel.Error); return; }
+            if (Me is null) { ECSHandler.debugger.AddLog($"Error, entity {uid} has no entity data during cleanup!", WarningLevel.Error); return; }
 
             int gridX = Me.Value.tileX / General.boidGridSize;
             int gridY = Me.Value.tileY / General.boidGridSize;

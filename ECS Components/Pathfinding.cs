@@ -54,7 +54,7 @@ namespace BOIDSimulator.ECS_Components
         public EC_PathFinding(Func<int, int, bool> Walkable)
         {
             this.Walkable = Walkable;
-            if (Map.tileMap is null) { General.debugger.AddLog("Tilemap was null during pathfinder initialisation.", WarningLevel.Error); return; }
+            if (Map.tileMap is null) { ECSHandler.debugger.AddLog("Tilemap was null during pathfinder initialisation.", WarningLevel.Error); return; }
 
             if (pather is null)
             {
@@ -78,12 +78,12 @@ namespace BOIDSimulator.ECS_Components
         {
             if (pather is null)
             {
-                General.debugger.AddLog($"Adding pather...", WarningLevel.Debug);
+                ECSHandler.debugger.AddLog($"Adding pather...", WarningLevel.Debug);
                 CreatePathers();
             }
 
             EC_Entity? Me = (EC_Entity?)ECSHandler.ECSs[typeof(EC_Entity)][uid];
-            if (Me is null) { General.debugger.AddLog($"Error, entity {uid} has no entity data!", WarningLevel.Error); return; }
+            if (Me is null) { ECSHandler.debugger.AddLog($"Error, entity {uid} has no entity data!", WarningLevel.Error); return; }
 
             int tileX = Me.Value.tileX;
             int tileY = Me.Value.tileY;
@@ -127,7 +127,7 @@ namespace BOIDSimulator.ECS_Components
                     path = pather.GetPath(tileX, tileY, targetX, targetY);
                     if (path is null || path.Count == 0) 
                     { 
-                        General.debugger.AddLog($"No path could be found from ({tileX},{tileY}) to ({targetX},{targetY}), self destructing...", WarningLevel.Debug); 
+                        ECSHandler.debugger.AddLog($"No path could be found from ({tileX},{tileY}) to ({targetX},{targetY}), self destructing...", WarningLevel.Debug); 
                         ECSHandler.FreeUID(uid); 
                         return; 
                     } // no path could be found, so it should not be there.

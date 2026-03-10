@@ -54,7 +54,7 @@ namespace BOIDSimulator.ECS_Components
         public readonly void Action(float dt, int uid)
         {
             EC_Entity? Me = (EC_Entity?)ECSHandler.ECSs[typeof(EC_Entity)][uid];
-            if (Me is null) { General.debugger.AddLog($"Error, entity {uid} has no entity data!", WarningLevel.Error); return; }
+            if (Me is null) { ECSHandler.debugger.AddLog($"Error, entity {uid} has no entity data!", WarningLevel.Error); return; }
 
             int tileX = Me.Value.tileX;
             int tileY = Me.Value.tileY;

@@ -14,7 +14,7 @@ namespace BOIDSimulator.ECS_Components
         private void LeaderAction(List<int>[][] boidGrid, int gridSize, float dt, int uid, ref EC_Entity Me)
         {
             EC_PathFinding? pathFindingNullable = (EC_PathFinding?)ECSHandler.ECSs[typeof(EC_PathFinding)][uid];
-            if (pathFindingNullable is null) { General.debugger.AddLog($"Leader boid {uid} didnt have a pathfinding module!", WarningLevel.Error); return; }
+            if (pathFindingNullable is null) { ECSHandler.debugger.AddLog($"Leader boid {uid} didnt have a pathfinding module!", WarningLevel.Error); return; }
             EC_PathFinding pathFinding = pathFindingNullable.Value;
 
             pathFinding.targetX = targetX;

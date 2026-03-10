@@ -20,11 +20,12 @@ namespace BOIDSimulator.ECS_Components
 
         public void Cleanup(int uid)
         {
-            if (ECSHandler.entities[spawnerUid] == false) { General.debugger.AddLog($"Attempted to access closed spawner.", WarningLevel.Debug); return; } // spawner is closed
+            if (ECSHandler.entities[spawnerUid] == false || spawnerUid == -1) 
+            { ECSHandler.debugger.AddLog($"Attempted to access closed spawner.", WarningLevel.Debug); return; } // spawner is closed
 
             EC_SpawnerLogic? spawnerLogicNullable = (EC_SpawnerLogic?)ECSHandler.ECSs[typeof(EC_SpawnerLogic)][spawnerUid];
 
-            if (spawnerLogicNullable is null) { General.debugger.AddLog($"Spawner logic was null? Has it been replaced?", WarningLevel.Debug); return; }
+            if (spawnerLogicNullable is null) { ECSHandler.debugger.AddLog($"Spawner logic was null?", WarningLevel.Warning); return; }
 
             EC_SpawnerLogic spawnerLogic = (EC_SpawnerLogic)spawnerLogicNullable;
             spawnerLogic.current--;
