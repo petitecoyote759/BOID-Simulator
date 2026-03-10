@@ -200,7 +200,16 @@ namespace BOIDSimulator
         public static bool gridRender = false;
         public static bool paused = false;
         public static bool highlight = false;
-        public static bool showLeaders = true;
+
+        public static bool showLeaders =
+#if DEBUG
+            true;
+#else
+            false;
+#endif
+
+
+
         public static bool renderRandom = false;
         public static bool showLeadingReason = false;
         public static bool refresh = true;
