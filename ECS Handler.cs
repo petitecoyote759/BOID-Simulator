@@ -74,7 +74,7 @@ namespace BOIDSimulator
 
 
         // <<Main Functions>> //
-        private static long LFT = DateTimeOffset.Now.ToUnixTimeMilliseconds();// last frame time
+        public static long LFT = DateTimeOffset.Now.ToUnixTimeMilliseconds();// last frame time
         private const int MaxFPS = 120;
         private const long MaxMsPerFrame = 1000 / MaxFPS;
         private const int secondsPerFPSUpdate = 10;

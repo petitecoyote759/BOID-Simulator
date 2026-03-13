@@ -19,13 +19,13 @@ namespace BOIDSimulator.ECS_Components
 
         public bool Active { get => active; set => active = value; }
         private bool active = true;
-
+        private int frameCount = 0;
 
 
         // <<Constants>> //
 
         const float totalBoidLifespanSeconds = 120;
-
+        const int framesPerCheck = 5;
 
 
         // <<Modified Constants>> //
@@ -51,19 +51,24 @@ namespace BOIDSimulator.ECS_Components
         }
 
 
-        public readonly void Action(float dt, int uid)
+        public void Action(float dt, int uid)
         {
-            EC_Entity? Me = (EC_Entity?)ECSHandler.ECSs[typeof(EC_Entity)][uid];
-            if (Me is null) { ECSHandler.debugger.AddLog($"Error, entity {uid} has no entity data!", WarningLevel.Error); return; }
+            frameCount++;
+            if (frameCount < framesPerCheck) { return; }
+            frameCount -= framesPerCheck; 
 
-            int tileX = Me.Value.tileX;
-            int tileY = Me.Value.tileY;
+
+            bool success = ECSHandler.GetEntityComponent(uid, out EC_Entity Me);
+            if (!success) { ECSHandler.debugger.AddLog($"Error, entity {uid} has no entity data!", WarningLevel.Error); return; }
+
+            int tileX = Me.tileX;
+            int tileY = Me.tileY;
 
 
             // <<Destroy at Centre>> //
 
-            EC_BoidLogic? boidLogic = (EC_BoidLogic?)ECSHandler.ECSs[typeof(EC_BoidLogic)][uid];
-            if (boidLogic is not null)
+            success = ECSHandler.GetEntityComponent(uid, out EC_BoidLogic boidLogic);
+            if (success)
             {
                 int targetX = EC_BoidLogic.targetX;
                 int targetY = EC_BoidLogic.targetY;
@@ -78,7 +83,7 @@ namespace BOIDSimulator.ECS_Components
 
             // <<Destroy After Lifespan>> //
 
-            if (DateTimeOffset.Now.ToUnixTimeMilliseconds() - creationTime > totalBoidLifespan)
+            if (ECSHandler.LFT - creationTime > totalBoidLifespan)
             {
                 ECSHandler.FreeUID(uid);
                 return;
