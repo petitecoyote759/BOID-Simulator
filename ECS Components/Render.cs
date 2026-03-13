@@ -42,8 +42,8 @@ namespace BOIDSimulator.ECS_Components
             EC_Entity? Me = (EC_Entity?)ECSHandler.ECSs[typeof(EC_Entity)][uid];
             if (Me is null) { ECSHandler.debugger.AddLog($"Error, entity {uid} has no entity data!", WarningLevel.Error); return; }
 
-            int gridX = Me.Value.tileX / RendererTools.drawGridSize;
-            int gridY = Me.Value.tileY / RendererTools.drawGridSize;
+            int gridX = Me.Value.tileX / RendererTools.drawGridTileSize;
+            int gridY = Me.Value.tileY / RendererTools.drawGridTileSize;
 
             lock (ECSHandler.updatedGrids)
             {
@@ -61,8 +61,8 @@ namespace BOIDSimulator.ECS_Components
             EC_Entity? Me = (EC_Entity?)ECSHandler.ECSs[typeof(EC_Entity)][uid];
             if (Me is null) { ECSHandler.debugger.AddLog($"Error, entity {uid} has no entity data!", WarningLevel.Error); return; }
 
-            int gridX = Me.Value.tileX / RendererTools.drawGridSize;
-            int gridY = Me.Value.tileY / RendererTools.drawGridSize;
+            int gridX = Me.Value.tileX / RendererTools.drawGridTileSize;
+            int gridY = Me.Value.tileY / RendererTools.drawGridTileSize;
 
             lock (ECSHandler.updatedGrids)
             {

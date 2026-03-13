@@ -14,7 +14,7 @@ namespace BOIDSimulator.Renderer
     {
         public static bool running = true;
 
-        public const int drawGridSize = 64;
+        public const int drawGridTileSize = 64;
         const int boidSize = 4;
 
         private const int MaxFPS = 120;
@@ -28,8 +28,8 @@ namespace BOIDSimulator.Renderer
         internal static void MainLoop()
         {
             // <<Initial Rendering>> //
-            int width = (int)MathF.Ceiling(Map.tileMap.Length / (float)drawGridSize);
-            int height = (int)MathF.Ceiling(Map.tileMap[0].Length / (float)drawGridSize);
+            int width = (int)MathF.Ceiling(Map.tileMap.Length / (float)drawGridTileSize);
+            int height = (int)MathF.Ceiling(Map.tileMap[0].Length / (float)drawGridTileSize);
 
             if (General.refresh)
             {
@@ -116,9 +116,9 @@ namespace BOIDSimulator.Renderer
             int height = Map.tileMap[0].Length;
             int size = PPT; // pixels per tile
 
-            for (int x = gridX * drawGridSize; x < (gridX + 1) * drawGridSize; x++)
+            for (int x = gridX * drawGridTileSize; x < (gridX + 1) * drawGridTileSize; x++)
             {
-                for (int y = gridY * drawGridSize; y < (gridY + 1) * drawGridSize; y++)
+                for (int y = gridY * drawGridTileSize; y < (gridY + 1) * drawGridTileSize; y++)
                 {
                     if (x >= Map.tileMap.Length || y >= Map.tileMap[0].Length) { continue; }
                     Tuple<byte, byte, byte> colours = TileColours[Map.tileMap[x][y]];

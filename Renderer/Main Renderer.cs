@@ -1,7 +1,9 @@
-﻿using SDL2;
+﻿using BOIDSimulator.ECS_Components;
+using SDL2;
 using ShortTools.General;
 using ShortTools.PlanetaryForge;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -24,22 +26,26 @@ namespace BOIDSimulator.Renderer
             { TileID.Grass, 0x0A820AFF },
             { TileID.Forest, 0x0F7314FF }
         };
-        public const int drawGridSize = 16;
+        public const int drawGridTileSize = 16;
 
-
+        public static int drawGridWidth = -1;
+        public static int drawGridHeight = -1;
 
         public static void Setup()
         {
             while (Map.tileMap is null) { Thread.Sleep(10); }
 
             // <<Map Image Generation>> //
-            IntPtr surface = SDL_CreateRGBSurfaceWithFormat(0, screenWidth, screenHeight, 32, SDL_PIXELFORMAT_RGBA8888);
+
             debugger.AddLog($"Creating surface for map of size {screenWidth}x{screenHeight}", WarningLevel.Debug);
-            SDL_LockSurface(surface);
+            
 
             targetRect.w = 1;
             targetRect.h = 1;
 
+            // <<Main Image Creation>> //
+            IntPtr surface = SDL_CreateRGBSurfaceWithFormat(0, screenWidth, screenHeight, 32, SDL_PIXELFORMAT_RGBA8888);
+            SDL_LockSurface(surface);
             for (int x = 0; x < Map.tileMap.Length; x++)
             {
                 targetRect.x = x;
@@ -56,23 +62,26 @@ namespace BOIDSimulator.Renderer
                     SDL_FillRect(surface, ref targetRect, colour.data);
                 }
             }
-
             SDL_UnlockSurface(surface);
 
             SDL_image.IMG_SavePNG(surface, "Test.png");
             mapTexture = SDL_CreateTextureFromSurface(SDLRenderer, surface);
 
             textures.Add(mapTexture);
+
+            SDL_FreeSurface(surface);
         }
 
 
 
 
 
-
+        static HashSet<(int, int)> gridDrawRequest = new HashSet<(int, int)>();
+        static HashSet<int> entityDrawRequests = new HashSet<int>();
         private static void Render(float dt)
         {
             Handler.HandleEvents();
+            ECSHandler.DoEntityRenderTasks(dt);
 
             srcRect.w = screenWidth;
             srcRect.h = screenHeight;
@@ -84,16 +93,58 @@ namespace BOIDSimulator.Renderer
             targetRect.x = 0;
             targetRect.y = 0;
             SDL_RenderCopyEx(SDLRenderer, mapTexture, ref srcRect, ref targetRect, 0, 0, SDL_RendererFlip.SDL_FLIP_NONE);
+
+
+            srcRect.w = drawGridTileSize;
+            srcRect.h = drawGridTileSize;
+            srcRect.x = 0; srcRect.y = 0;
+
+            targetRect.w = drawGridTileSize;
+            targetRect.h = drawGridTileSize;
+
+            lock (gridDrawRequest)
+            {
+                foreach ((int, int) coordinate in gridDrawRequest)
+                {
+                    srcRect.x = coordinate.Item1 * drawGridTileSize; srcRect.y = coordinate.Item2 * drawGridTileSize;
+                    SDL_RenderCopy(SDLRenderer, mapTexture, ref srcRect, ref targetRect);
+                }
+                gridDrawRequest.Clear();
+            }
+            lock (entityDrawRequests)
+            {
+                foreach (int uid in entityDrawRequests)
+                {
+                    bool success = ECSHandler.GetEntityComponent(uid, out EC_Render renderComponent);
+                    success &= ECSHandler.GetEntityComponent(uid, out EC_Entity entityData);
+                    if (!success) { continue; }
+
+                    if (renderComponent.image == IntPtr.Zero) 
+                    {
+                        targetRect.w = 1; targetRect.h = 1;
+                        targetRect.x = (int)entityData.position.X;
+                        targetRect.y = (int)entityData.position.Y;
+
+                        SDL_RenderDrawPoint(SDLRenderer, targetRect.x, targetRect.y);
+                    }
+                }
+                entityDrawRequests.Clear();
+            }
         }
-        public static void RequestDrawGrid(params dynamic[] args)
+        public static void RequestDrawGrid(int gridX, int gridY)
         {
-
+            lock (gridDrawRequest)
+            {
+                gridDrawRequest.Add((gridX, gridY));
+            }
         }
-        public static void RequestEntityDraw(params dynamic[] args)
+        public static void RequestEntityDraw(int gridX, int gridY, int uid)
         {
-
+            lock (entityDrawRequests)
+            {
+                entityDrawRequests.Add(uid);
+            }
         }
-
     }
 
 
