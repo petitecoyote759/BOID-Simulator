@@ -67,7 +67,9 @@ namespace BOIDSimulator.Renderer
 
         static RendererTools()
         {
+            // <<Misc Variables Setup>> //
             currentDirectory = Directory.GetCurrentDirectory();
+
             debugger = new Debugger("Naturio Renderer",
 #if DEBUG
                 WarningLevel.Debug,
@@ -75,6 +77,43 @@ namespace BOIDSimulator.Renderer
                 WarningLevel.Info,
 #endif
                 DebuggerFlag.PrintLogs, DebuggerFlag.WriteLogsToFile, DebuggerFlag.DisplayThread);
+
+            controllerThread.Name = "Naturio Renderer Thread";
+
+
+            // <<SDL Setup>> //
+            // Initialised general SDL.
+            SDL_Init(SDL_INIT_EVERYTHING | SDL_INIT_SENSOR);
+            // png handling setup.
+            SDL_image.IMG_Init(SDL_image.IMG_InitFlags.IMG_INIT_PNG);
+
+            // Screen setup
+            SDL_DisplayMode displayMode;
+            if (SDL_GetCurrentDisplayMode(0, out displayMode) != 0)
+            {
+                debugger.AddLog($"SDL_GetCurrentDisplayMode errored! Activating backup. Error : {SDL_GetError()}", WarningLevel.Error);
+
+                // Fallback method
+                if (SDL_GetDesktopDisplayMode(0, out displayMode) != 0)
+                {
+                    debugger.AddLog($"SDL_GetDesktopDisplayMode failed! Screensize could not be obtained. Quitting... Error : {SDL_GetError()}");
+                    SDL_Quit();
+                    return;
+                }
+            }
+
+            SDLWindow = SDL_CreateWindow("Naturio Window",
+                SDL_WINDOWPOS_CENTERED,
+                SDL_WINDOWPOS_CENTERED, screenWidth, screenHeight,
+                SDL_WindowFlags.SDL_WINDOW_BORDERLESS);
+
+            SDLRenderer = SDL.SDL_CreateRenderer(SDLWindow, -1,
+                SDL_RendererFlags.SDL_RENDERER_ACCELERATED |
+                SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC);
+
+
+
+            SDL_SetRenderDrawColor(SDLRenderer, 60, 10, 70, 255); // set default colour to purple
         }
 
 
@@ -82,12 +121,19 @@ namespace BOIDSimulator.Renderer
 
 
 
+        const long minMsPerFrame = 10;
         private static void ControllerEntryPoint()
         {
+            LoadImages();
+
             float dt;
+            long dtMs;
             while (Running)
             {
-                dt = GetDt(ref LFT);
+                dt = GetDt(ref LFT, out dtMs);
+                if (dtMs < minMsPerFrame) { Thread.Sleep((int)(minMsPerFrame - dtMs)); } // caps the fps to a reasonable amount.
+
+
             }
         }
 
@@ -95,19 +141,21 @@ namespace BOIDSimulator.Renderer
 
         /// <summary>
         /// Gets the delta time in seconds since the last frame time as given, and updates the last frame time.
+        /// Also returns the delta time in milliseconds as an out variable
         /// </summary>
-        private static float GetDt(ref long LFT)
+        private static float GetDt(ref long LFT, out long dtMs)
         {
             long now = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-            float dt = (now - LFT) / 1000f;
+            dtMs = (now - LFT);
             LFT = now;
-            return dt;
+            return dtMs / 1000f;
         }
 
 
 
         private static void LoadImages()
         {
+            // All images should be contained within the \Images folder
         }
     }
 
