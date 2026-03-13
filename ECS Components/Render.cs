@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Text;
+using BOIDSimulator.Renderer;
 using System.Threading.Tasks;
 
 namespace BOIDSimulator.ECS_Components
@@ -41,8 +42,8 @@ namespace BOIDSimulator.ECS_Components
             EC_Entity? Me = (EC_Entity?)ECSHandler.ECSs[typeof(EC_Entity)][uid];
             if (Me is null) { ECSHandler.debugger.AddLog($"Error, entity {uid} has no entity data!", WarningLevel.Error); return; }
 
-            int gridX = Me.Value.tileX / Renderer.drawGridSize;
-            int gridY = Me.Value.tileY / Renderer.drawGridSize;
+            int gridX = Me.Value.tileX / RendererTools.drawGridSize;
+            int gridY = Me.Value.tileY / RendererTools.drawGridSize;
 
             lock (ECSHandler.updatedGrids)
             {
@@ -52,7 +53,7 @@ namespace BOIDSimulator.ECS_Components
                 }
                 ECSHandler.updatedGrids.Add((gridX, gridY));
             }
-            Renderer.RequestEntityDraw(gridX, gridY, uid);
+            RendererTools.RequestEntityDraw(gridX, gridY, uid);
         }
 
         public void Cleanup(int uid)
@@ -60,8 +61,8 @@ namespace BOIDSimulator.ECS_Components
             EC_Entity? Me = (EC_Entity?)ECSHandler.ECSs[typeof(EC_Entity)][uid];
             if (Me is null) { ECSHandler.debugger.AddLog($"Error, entity {uid} has no entity data!", WarningLevel.Error); return; }
 
-            int gridX = Me.Value.tileX / Renderer.drawGridSize;
-            int gridY = Me.Value.tileY / Renderer.drawGridSize;
+            int gridX = Me.Value.tileX / RendererTools.drawGridSize;
+            int gridY = Me.Value.tileY / RendererTools.drawGridSize;
 
             lock (ECSHandler.updatedGrids)
             {

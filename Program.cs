@@ -1,7 +1,6 @@
 ﻿using ShortTools.PlanetaryForge;
 using ShortTools.General;
 using ShortTools.MagicContainer;
-using SimpleGraphicsLib;
 using System.Collections.ObjectModel;
 using System.ComponentModel.Design;
 using System.Diagnostics;
@@ -10,14 +9,13 @@ using static ShortTools.General.Prints;
 using Debugger = ShortTools.General.Debugger;
 using BOIDSimulator.ECS_Components;
 using System.Numerics;
+using BOIDSimulator.Renderer;
 
 
 namespace BOIDSimulator
 {
     public static class General
     {
-        public static GraphicsHandler renderer = null;
-        
         public static List<IBoid> allBoids = new List<IBoid>();
         public const int boidGridSize = 48;
         const int boids = 10000;
@@ -44,7 +42,8 @@ namespace BOIDSimulator
         public static void Main(string[] args)
         {
             Random random = new Random();
-            Thread.CurrentThread.Name = "Main Thread";
+            Thread.CurrentThread.Name = "Render Thread";
+
             debugger = new Debugger("Main",
 #if DEBUG
                 WarningLevel.Debug,
@@ -54,53 +53,50 @@ namespace BOIDSimulator
                 DebuggerFlag.PrintLogs, DebuggerFlag.WriteLogsToFile, DebuggerFlag.DisplayThread);
             debugger.DefaultLevel = WarningLevel.Info;
 
-            using (renderer = new GraphicsHandler(1920, 1080,
-               render: (Renderer.MainLoop),//Render,
-               flags: RendererFlag.OutputToTerminal))
+
+
+            debugger.AddLog($"Starting Perlin Demo with {boids} boids");
+            debugger.AddLog($"Dimensions = {RendererTools.ScreenWidth}x{RendererTools.ScreenHeight}", WarningLevel.Debug);
+
+            RendererTools.RequestSetupRenderer();
+            Map.CreateMap(RendererTools.ScreenWidth, RendererTools.ScreenHeight);
+
+            int boidGridw = (RendererTools.ScreenWidth / (boidGridSize)) + 1;
+            int boidGridh = (RendererTools.ScreenHeight / (boidGridSize)) + 1;
+            debugger.AddLog($"Boidgrid initialising with dimensions of {boidGridw}x{boidGridh}");
+
+            debugger.AddLog($"Width of {boidGridw}x{boidGridh}", WarningLevel.Debug);
+            EC_BoidLogic.boidGrid = new List<int>[boidGridw][];
+            EC_BoidLogic.leaderGrid = new HashSet<int>[boidGridw][];
+            EC_PathFinding.cachedPaths = new List<Queue<Vector2>>[boidGridw][];
+            for (int x = 0; x < boidGridw; x++)
             {
-                debugger.AddLog($"Starting Perlin Demo with {boids} boids");
-                debugger.AddLog($"Dimensions = {renderer.screenwidth}x{renderer.screenheight}", WarningLevel.Debug);
-
-                renderer.Pause();
-
-                Map.CreateMap(renderer.screenwidth, renderer.screenheight);
-
-
-                int boidGridw = (renderer.screenwidth / (boidGridSize)) + 1;
-                int boidGridh = (renderer.screenheight / (boidGridSize)) + 1;
-                debugger.AddLog($"Boidgrid initialising with dimensions of {boidGridw}x{boidGridh}");
-
-                debugger.AddLog($"Width of {boidGridw}x{boidGridh}", WarningLevel.Debug);
-                EC_BoidLogic.boidGrid = new List<int>[boidGridw][];
-                EC_BoidLogic.leaderGrid = new HashSet<int>[boidGridw][];
-                EC_PathFinding.cachedPaths = new List<Queue<Vector2>>[boidGridw][];
-                for (int x = 0; x < boidGridw; x++)
+                EC_BoidLogic.boidGrid[x] = new List<int>[boidGridh];
+                EC_BoidLogic.leaderGrid[x] = new HashSet<int>[boidGridh];
+                EC_PathFinding.cachedPaths[x] = new List<Queue<Vector2>>[boidGridh];
+                for (int y = 0; y < boidGridh; y++)
                 {
-                    EC_BoidLogic.boidGrid[x] = new List<int>[boidGridh];
-                    EC_BoidLogic.leaderGrid[x] = new HashSet<int>[boidGridh];
-                    EC_PathFinding.cachedPaths[x] = new List<Queue<Vector2>>[boidGridh];
-                    for (int y = 0; y < boidGridh; y++)
-                    {
-                        EC_BoidLogic.boidGrid[x][y] = new List<int>() { };
-                        EC_BoidLogic.leaderGrid[x][y] = new HashSet<int>();
-                        EC_PathFinding.cachedPaths[x][y] = new List<Queue<Vector2>>();
-                        //Console.WriteLine($"creating new boid at ({x * boidGridSize}, {y * boidGridSize})");
-                    }
+                    EC_BoidLogic.boidGrid[x][y] = new List<int>() { };
+                    EC_BoidLogic.leaderGrid[x][y] = new HashSet<int>();
+                    EC_PathFinding.cachedPaths[x][y] = new List<Queue<Vector2>>();
                 }
-                EC_BoidLogic.targetX = Map.tileMap.Length / 2;
-                EC_BoidLogic.targetY = Map.tileMap[0].Length / 2;
-
-                int spawnerUid = WalkerSpawner.CreateWalkerSpawner();
-
-
-                starting = false;
-                renderer.Resume();
-                ECSHandler.controllerThread.Start();
-
-
-                HandleUI();
             }
-            Renderer.running = false;
+            EC_BoidLogic.targetX = Map.tileMap.Length / 2;
+            EC_BoidLogic.targetY = Map.tileMap[0].Length / 2;
+
+            int spawnerUid = WalkerSpawner.CreateWalkerSpawner();
+
+
+            starting = false;
+            RendererTools.Start();
+            ECSHandler.controllerThread.Start();
+
+
+            HandleUI();
+            
+
+
+            RendererTools.Running = false;
             debugger.AddLog($"Shutting down renderer", WarningLevel.Info); 
             debugger.Dispose(true);
             ECSHandler.running = false;

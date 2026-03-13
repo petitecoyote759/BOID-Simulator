@@ -1,7 +1,7 @@
 ﻿using BOIDSimulator.ECS_Components;
 using ShortTools.General;
 using System.Runtime.CompilerServices;
-
+using BOIDSimulator.Renderer;
 
 
 
@@ -137,7 +137,7 @@ namespace BOIDSimulator
             {
                 foreach ((int, int) coordinate in updatedGrids)
                 {
-                    Renderer.RequestDrawGrid(coordinate.Item1, coordinate.Item2);
+                    RendererTools.RequestDrawGrid(coordinate.Item1, coordinate.Item2);
                 }
             }
         }

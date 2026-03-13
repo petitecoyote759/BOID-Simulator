@@ -1,5 +1,4 @@
 ﻿using ShortTools.Perlin;
-using SimpleGraphicsLib;
 using System.Net.Mail;
 using ShortTools.PlanetaryForge;
 using System.Runtime.CompilerServices;

@@ -12,7 +12,7 @@ using static SDL2.SDL;
 
 namespace BOIDSimulator.Renderer
 {
-    internal static class RendererTools
+    internal static partial class RendererTools
     {
         // <<SDL Pointers>> //
         private static IntPtr SDLRenderer;
@@ -33,14 +33,18 @@ namespace BOIDSimulator.Renderer
         private static int screenHeight;
 
         // <<Drawing Variables>> //
-        private static SDL_Rect targetRect;
-        private static SDL_Rect srcRect;
+        private static SDL_Rect targetRect = new SDL_Rect();
+        private static SDL_Rect srcRect = new SDL_Rect();
         private static readonly Dictionary<string, IntPtr> images = new Dictionary<string, nint>();
+        /// <summary>
+        /// Other unmanaged textures apart from the images to be cleaned up when renderer is disposed.
+        /// </summary>
+        public static readonly List<IntPtr> textures = new List<IntPtr>();
 
         // <<Runtime Variables>> //
         private static long LFT = DateTimeOffset.Now.ToUnixTimeMilliseconds(); // last frame time
         public static bool Running = true;
-        private static readonly Thread controllerThread = new Thread(new ThreadStart(ControllerEntryPoint));
+        private static readonly Thread controllerThread = new Thread(new ThreadStart(SetupRenderer));
         private static string currentDirectory;
         public static readonly Debugger debugger;
 
@@ -80,27 +84,42 @@ namespace BOIDSimulator.Renderer
 
             controllerThread.Name = "Naturio Renderer Thread";
 
-
+        }
+        static ManualResetEvent setupComplete = new ManualResetEvent(false);
+        public static void RequestSetupRenderer()
+        {
+            controllerThread.Start();
+            setupComplete.WaitOne();
+        }
+        private static void SetupRenderer()
+        { 
             // <<SDL Setup>> //
+            debugger.AddLog($"Initialising SDL", WarningLevel.Info);
             // Initialised general SDL.
             SDL_Init(SDL_INIT_EVERYTHING | SDL_INIT_SENSOR);
             // png handling setup.
             SDL_image.IMG_Init(SDL_image.IMG_InitFlags.IMG_INIT_PNG);
 
+            SDL_ttf.TTF_Init();
+            LoadFonts();
+
             // Screen setup
             SDL_DisplayMode displayMode;
             if (SDL_GetCurrentDisplayMode(0, out displayMode) != 0)
             {
-                debugger.AddLog($"SDL_GetCurrentDisplayMode errored! Activating backup. Error : {SDL_GetError()}", WarningLevel.Error);
+                debugger.AddLog($"SDL_GetCurrentDisplayMode errored! Activating backup. Error : {GetSDLError()}", WarningLevel.Error);
 
                 // Fallback method
                 if (SDL_GetDesktopDisplayMode(0, out displayMode) != 0)
                 {
-                    debugger.AddLog($"SDL_GetDesktopDisplayMode failed! Screensize could not be obtained. Quitting... Error : {SDL_GetError()}");
+                    debugger.AddLog($"SDL_GetDesktopDisplayMode failed! Screensize could not be obtained. Quitting... Error : {GetSDLError()}");
                     SDL_Quit();
                     return;
                 }
             }
+            screenWidth = displayMode.w;
+            screenHeight = displayMode.h;
+            debugger.AddLog($"Monitor resolution obtained as {screenWidth}x{screenHeight}");
 
             SDLWindow = SDL_CreateWindow("Naturio Window",
                 SDL_WINDOWPOS_CENTERED,
@@ -114,28 +133,67 @@ namespace BOIDSimulator.Renderer
 
 
             SDL_SetRenderDrawColor(SDLRenderer, 60, 10, 70, 255); // set default colour to purple
+
+            setupComplete.Set();
+
+
+            RunRenderer();
         }
 
 
 
 
 
-
+        // <<Controller Thread Section>> //
         const long minMsPerFrame = 10;
-        private static void ControllerEntryPoint()
+        /// <summary>
+        /// The state of the renderer, to change state use the <see cref="Pause"/> and <see cref="Resume"/> functions.
+        /// </summary>
+        public static bool Paused => paused;
+        private static bool paused = true;
+        private static void RunRenderer()
         {
             LoadImages();
+            Setup();
 
             float dt;
             long dtMs;
             while (Running)
             {
                 dt = GetDt(ref LFT, out dtMs);
+                if (paused) { Thread.Sleep(10); continue; } // update LFT before skipping to avoid issues when unpausing
                 if (dtMs < minMsPerFrame) { Thread.Sleep((int)(minMsPerFrame - dtMs)); } // caps the fps to a reasonable amount.
 
+                // <<Main Drawing Code>> //
 
+                SDL_RenderClear(SDLRenderer);
+
+                Render(dt);
+
+
+                SDL_RenderPresent(SDLRenderer);
             }
+
+            debugger.AddLog($"Running cycle complete", WarningLevel.Info);
+            Dispose();
         }
+
+        // <<Thread Controls>> //
+        public static void Start() { paused = false; }
+        public static void Pause() { paused = true; }
+        public static void Resume() { paused = false; }
+        public static void Stop() { Running = false; }
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -152,10 +210,113 @@ namespace BOIDSimulator.Renderer
         }
 
 
-
+        // <<Loader Functions>> //
         private static void LoadImages()
         {
             // All images should be contained within the \Images folder
+            string[] pngFiles = Directory.GetFiles(currentDirectory + $"\\Images\\", "*.png", SearchOption.AllDirectories);
+            string[] bmpFiles = Directory.GetFiles(currentDirectory + $"\\Images\\", "*.bmp", SearchOption.AllDirectories);
+            int directoriesToImages = currentDirectory.Split('\\').Length;
+
+            foreach (string path in pngFiles)
+            {
+                string[] dividedPath = path.Split('\\');
+                // Get image name
+                StringBuilder builder = new StringBuilder();
+                for (int i = directoriesToImages; i < dividedPath.Length; i++)
+                {
+                    builder.Append(dividedPath[i]);
+                    if (i != dividedPath.Length - 1) { builder.Append('\\'); }
+                }
+                string imageName = builder.ToString();
+
+                if (images.ContainsKey(imageName)) 
+                { debugger.AddLog($"Attempted to add image {imageName} from {path}. There was already an entry with that name", WarningLevel.Error); continue;  }
+
+                IntPtr imagePointer = SDL_image.IMG_LoadTexture(SDLRenderer, path);
+
+                if (imagePointer == IntPtr.Zero)
+                { debugger.AddLog($"Image {imageName} could not be loaded. Error : {GetSDLError()}", WarningLevel.Error); continue; }
+
+
+                images.Add(imageName, imagePointer);
+            }
+        }
+
+        private static void LoadFonts()
+        {
+            // All fonts contained in the \Fonts folder
+            string[] files = Directory.GetFiles(currentDirectory + $"\\Fonts\\", "*.ttf", SearchOption.AllDirectories);
+            foreach (string path in files)
+            {
+                string fileName = path.Split('\\').Last();
+                string fontName = fileName.Split('.').First();
+                IntPtr fontPointer = SDL_ttf.TTF_OpenFont(path, 128);
+                // Font didnt load
+                if (fontPointer == IntPtr.Zero) { debugger.AddLog($"Font at {fileName} couldnt be loaded. Reason : {GetSDLError()}", WarningLevel.Error); }
+                // Font name already found
+                else if (fonts.ContainsKey(fontName)) { debugger.AddLog($"Font at {fileName} has name {fontName}, one is already loaded.", WarningLevel.Error); }
+                // Success
+                else { fonts.Add(fontName, fontPointer); }
+            }
+        }
+
+
+        private static string GetSDLError() { string error = SDL_GetError(); SDL_ClearError(); return error; }
+
+
+
+
+
+
+
+        private static bool disposed = false;
+        private static void Dispose()
+        {
+            if (disposed) { debugger.AddLog($"Attempted recall of dispose", WarningLevel.Warning); return; }
+            disposed = true;
+            debugger.AddLog($"Disposing...", WarningLevel.Info);
+
+            // dispose images, font, and then close sdl
+            while (images.Count > 0)
+            {
+                KeyValuePair<string, IntPtr> image = images.First();
+                images.Remove(image.Key);
+                SDL_DestroyTexture(image.Value);
+            }
+            while (textures.Count > 0)
+            {
+                IntPtr texture = textures.First();
+                textures.RemoveAt(0);
+                SDL_DestroyTexture(texture);
+            }
+            while (fonts.Count > 0)
+            {
+                KeyValuePair<string, IntPtr> font = fonts.First();
+                fonts.Remove(font.Key);
+                SDL_ttf.TTF_CloseFont(font.Value);
+            }
+
+            SDL_DestroyRenderer(SDLRenderer);
+            SDL_DestroyWindow(SDLWindow);
+            SDL_Quit();
+        }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+        public static void Main()
+        {
+            LoadImages();
         }
     }
 

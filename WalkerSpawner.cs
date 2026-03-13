@@ -1,5 +1,4 @@
 ﻿using BOIDSimulator.ECS_Components;
-using Silk.NET.SDL;
 using System;
 using System.Collections.Generic;
 using System.Linq;

@@ -7,7 +7,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
-
+/*
 namespace BOIDSimulator.Renderer
 {
     internal static class Renderer
@@ -16,14 +16,6 @@ namespace BOIDSimulator.Renderer
 
         public const int drawGridSize = 64;
         const int boidSize = 4;
-
-        internal static Debugger debugger = new Debugger("Renderer",
-#if DEBUG
-                WarningLevel.Debug,
-#else
-                WarningLevel.Info,
-#endif
-                DebuggerFlag.PrintLogs, DebuggerFlag.WriteLogsToFile, DebuggerFlag.DisplayThread);
 
         private const int MaxFPS = 120;
         private const long MaxMsPerFrame = 1000 / MaxFPS;
@@ -35,33 +27,6 @@ namespace BOIDSimulator.Renderer
         private const int PPT = 1;
         internal static void MainLoop()
         {
-            if (Map.tileMap is null) { return; }
-            if (running == false) { debugger.AddLog($"Shutting down renderer", WarningLevel.Info); debugger.Dispose(true); return; }
-
-
-
-            // <<Frame Timing and Counting>> //
-            long now = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-            long delta = now - LFT;
-            int makeupTime = (int)(MaxMsPerFrame - delta); // the amount of time 
-            if (makeupTime > 0)
-            {
-                Thread.Sleep(makeupTime);
-            }
-            float dt = delta / 1000f;
-            LFT = now;
-
-            frameCount++;
-            FPSUpateTimer += delta;
-            if (FPSUpateTimer > ticksPerFPSUpdate)
-            {
-                FPSUpateTimer -= ticksPerFPSUpdate;
-                debugger.AddLog($"Renderer Frame Count {frameCount} over {secondsPerFPSUpdate} giving {frameCount / secondsPerFPSUpdate} FPS", WarningLevel.Debug);
-                frameCount = 0;
-            }
-
-
-
             // <<Initial Rendering>> //
             int width = (int)MathF.Ceiling(Map.tileMap.Length / (float)drawGridSize);
             int height = (int)MathF.Ceiling(Map.tileMap[0].Length / (float)drawGridSize);
@@ -160,19 +125,13 @@ namespace BOIDSimulator.Renderer
                     byte r = (byte)(colours.Item1 * ((3 + Map.altitudeMap[x][y]) / 4f));
                     byte g = (byte)(colours.Item2 * ((3 + Map.altitudeMap[x][y]) / 4f));
                     byte b = (byte)(colours.Item3 * ((3 + Map.altitudeMap[x][y]) / 4f));
-                    General.renderer.SetPixel(x * size, y * size, size, size, r, g, b);
+#warning Fix this
+                    //General.renderer.SetPixel(x * size, y * size, size, size, r, g, b);
                 }
             }
         }
 
-        private static readonly Dictionary<TileID, Tuple<byte, byte, byte>> TileColours = new Dictionary<TileID, Tuple<byte, byte, byte>>()
-        {
-            { TileID.Cliff, new Tuple<byte, byte, byte>(75, 75, 75) },
-            { TileID.Water, new Tuple<byte, byte, byte>(20, 160, 200) },
-            { TileID.Sand, new Tuple<byte, byte, byte>(200, 200, 20) },
-            { TileID.Grass, new Tuple<byte, byte, byte>(10, 130, 10) },
-            { TileID.Forest, new Tuple<byte, byte, byte>(15, 115, 20) }
-        };
+        
 
 
 
@@ -188,28 +147,31 @@ namespace BOIDSimulator.Renderer
                 // it is a boid
                 if (boidLogic.Value.leader && General.showLeaders)
                 {
-                    General.renderer.SetPixel(
-                    (int)((entityData.Value.position.X - (boidSize * 2)) * PPT),
-                    (int)((entityData.Value.position.Y - (boidSize * 2)) * PPT),
-                    boidSize * 4 * PPT,
-                    boidSize * 4 * PPT,
-                    150,
-                    100,
-                    255
-                    );
+#warning Fix this
+                    //General.renderer.SetPixel(
+                    //(int)((entityData.Value.position.X - (boidSize * 2)) * PPT),
+                    //(int)((entityData.Value.position.Y - (boidSize * 2)) * PPT),
+                    //boidSize * 4 * PPT,
+                    //boidSize * 4 * PPT,
+                    //150,
+                    //100,
+                    //255
+                    //);
                     return;
                 }
             }
 
-            General.renderer.SetPixel(
-            (int)(entityData.Value.position.X * PPT),
-            (int)(entityData.Value.position.Y * PPT),
-            boidSize * PPT,
-            boidSize * PPT,
-            255,
-            200,
-            100
-            );
+#warning Fix this
+            //General.renderer.SetPixel(
+            //(int)(entityData.Value.position.X * PPT),
+            //(int)(entityData.Value.position.Y * PPT),
+            //boidSize * PPT,
+            //boidSize * PPT,
+            //255,
+            //200,
+            //100
+            //);
         }
     }
 }
+*/
