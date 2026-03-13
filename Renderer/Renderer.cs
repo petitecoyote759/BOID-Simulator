@@ -8,7 +8,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BOIDSimulator
+namespace BOIDSimulator.Renderer
 {
     internal static class Renderer
     {
