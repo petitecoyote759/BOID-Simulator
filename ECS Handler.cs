@@ -76,8 +76,9 @@ namespace BOIDSimulator
         // <<Main Functions>> //
         public static long LFT = DateTimeOffset.Now.ToUnixTimeMilliseconds();// last frame time
         private const int MaxFPS = 120;
+        public static int currentFPS = 0;
         private const long MaxMsPerFrame = 1000 / MaxFPS;
-        private const int secondsPerFPSUpdate = 10;
+        private const int secondsPerFPSUpdate = 2;
         private const long ticksPerFPSUpdate = secondsPerFPSUpdate * 1000;
         private static int frameCount = 0;
         private static long FPSUpateTimer = 0;
@@ -102,7 +103,8 @@ namespace BOIDSimulator
                 if (FPSUpateTimer > ticksPerFPSUpdate)
                 {
                     FPSUpateTimer -= ticksPerFPSUpdate;
-                    debugger.AddLog($"ECS Frame Count {frameCount} over {secondsPerFPSUpdate} giving {frameCount / secondsPerFPSUpdate} FPS", WarningLevel.Debug);
+                    currentFPS = frameCount / secondsPerFPSUpdate;
+                    debugger.AddLog($"ECS Frame Count {frameCount} over {secondsPerFPSUpdate} giving {currentFPS} FPS", WarningLevel.Debug);
                     frameCount = 0;
                 }
 

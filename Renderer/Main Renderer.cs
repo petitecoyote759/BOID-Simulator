@@ -111,29 +111,27 @@ namespace BOIDSimulator.Renderer
 
             ECSHandler.DoEntityRenderTasks(dt);
 
-            srcRect.w = drawGridTileSize;
-            srcRect.h = drawGridTileSize;
+            srcRect.w = drawGridTileSize + 2;
+            srcRect.h = srcRect.w;
             srcRect.x = 0; srcRect.y = 0;
 
-            targetRect.w = drawGridTileSize;
-            targetRect.h = drawGridTileSize;
+            targetRect.w = (int)((drawGridTileSize + 2) * Camera.zoom);
+            targetRect.h = targetRect.w;
 
             SDL_SetTextureBlendMode(screenTexture, SDL_BlendMode.SDL_BLENDMODE_NONE);
             lock (gridDrawRequest)
             {
-                targetRect.w = (int)(drawGridTileSize * Camera.zoom) + 2;
-                targetRect.h = targetRect.w;
                 foreach ((int, int) coordinate in gridDrawRequest)
                 {
-                    targetRect.x = GetPx(coordinate.Item1 * drawGridTileSize) - 1; // draw with an extra pixel of buffer to help with zoom float issues
-                    targetRect.y = GetPy(coordinate.Item2 * drawGridTileSize) - 1;
+                    targetRect.x = GetPx((coordinate.Item1 * drawGridTileSize) - 1); // draw with an extra pixel of buffer to help with zoom float issues
+                    targetRect.y = GetPy((coordinate.Item2 * drawGridTileSize) - 1);
                     if (targetRect.x < -targetRect.w || targetRect.y < -targetRect.w ||
                         targetRect.x >= screenWidth || targetRect.y >= screenHeight)
                     {
                         continue;
                     }
 
-                    srcRect.x = coordinate.Item1 * drawGridTileSize; srcRect.y = coordinate.Item2 * drawGridTileSize;
+                    srcRect.x = (coordinate.Item1 * drawGridTileSize) - 1; srcRect.y = (coordinate.Item2 * drawGridTileSize) - 1;
                     //SDL_RenderCopy(SDLRenderer, mapTexture, ref srcRect, ref srcRect);
                     SDL_RenderCopy(SDLRenderer, mapTexture, ref srcRect, ref targetRect);
                 }
@@ -188,6 +186,34 @@ namespace BOIDSimulator.Renderer
                 }
                 entityDrawRequests.Clear();
             }
+
+
+            // <<FPS Drawing>> //
+            Write(0, 0, 20, 30, currentFPS.ToString());
+            Write(0, 40, 20, 30, ECSHandler.currentFPS.ToString());
+        }
+
+
+        private static Dictionary<string, IntPtr> textCache = new Dictionary<string, IntPtr>();
+        private static void Write(int posX, int posY, int widthPerChar, int height, string text, string font = "Aller_Bd")
+        {
+            IntPtr textImage;
+            if (textCache.ContainsKey(text))
+            {
+                textImage = textCache[text];
+            }
+            else
+            {
+                IntPtr surface = SDL_ttf.TTF_RenderText_Solid(fonts[font], text, Black);
+                textImage = SDL_CreateTextureFromSurface(SDLRenderer, surface);
+                SDL_FreeSurface(surface);
+                textCache.Add(text, textImage);
+                textures.Add(textImage);
+            }
+
+            targetRect.x = posX; targetRect.y = posY;
+            targetRect.w = widthPerChar * text.Length; targetRect.h = height;
+            SDL_RenderCopy(SDLRenderer, textImage, IntPtr.Zero, ref targetRect);
         }
 
 

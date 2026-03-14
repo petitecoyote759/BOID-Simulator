@@ -162,6 +162,10 @@ namespace BOIDSimulator.Renderer
         /// </summary>
         public static bool Paused => paused;
         private static bool paused = true;
+        private static int frameCount = 0;
+        private static int currentFPS;
+        private static long frameTimer = 0;
+        private const long frameTimerUpdate = 1000; // time per frame update in ms
         private static void RunRenderer()
         {
             LoadImages();
@@ -173,6 +177,14 @@ namespace BOIDSimulator.Renderer
             {
                 dt = GetDt(ref LFT, out dtMs);
                 Handler.HandleEvents(dt);
+                frameTimer += dtMs;
+                frameCount++;
+                if (frameTimer > frameTimerUpdate)
+                {
+                    frameTimer -= frameTimerUpdate;
+                    currentFPS = (int)((frameCount * 1000) / frameTimerUpdate);
+                    frameCount = 0;
+                }
                 if (paused) { Thread.Sleep(10); continue; } // update LFT before skipping to avoid issues when unpausing
                 if (dtMs < minMsPerFrame) { Thread.Sleep((int)(minMsPerFrame - dtMs)); } // caps the fps to a reasonable amount.
 
