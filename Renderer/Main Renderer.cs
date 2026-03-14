@@ -109,8 +109,6 @@ namespace BOIDSimulator.Renderer
             }
 
 
-
-            Handler.HandleEvents();
             ECSHandler.DoEntityRenderTasks(dt);
 
             srcRect.w = drawGridTileSize;
@@ -123,10 +121,21 @@ namespace BOIDSimulator.Renderer
             SDL_SetTextureBlendMode(screenTexture, SDL_BlendMode.SDL_BLENDMODE_NONE);
             lock (gridDrawRequest)
             {
+                targetRect.w = (int)(drawGridTileSize * Camera.zoom) + 2;
+                targetRect.h = targetRect.w;
                 foreach ((int, int) coordinate in gridDrawRequest)
                 {
+                    targetRect.x = GetPx(coordinate.Item1 * drawGridTileSize) - 1; // draw with an extra pixel of buffer to help with zoom float issues
+                    targetRect.y = GetPy(coordinate.Item2 * drawGridTileSize) - 1;
+                    if (targetRect.x < -targetRect.w || targetRect.y < -targetRect.w ||
+                        targetRect.x >= screenWidth || targetRect.y >= screenHeight)
+                    {
+                        continue;
+                    }
+
                     srcRect.x = coordinate.Item1 * drawGridTileSize; srcRect.y = coordinate.Item2 * drawGridTileSize;
-                    SDL_RenderCopy(SDLRenderer, mapTexture, ref srcRect, ref srcRect);
+                    //SDL_RenderCopy(SDLRenderer, mapTexture, ref srcRect, ref srcRect);
+                    SDL_RenderCopy(SDLRenderer, mapTexture, ref srcRect, ref targetRect);
                 }
                 gridDrawRequest.Clear();
             }
@@ -142,8 +151,8 @@ namespace BOIDSimulator.Renderer
                     if (renderComponent.image == IntPtr.Zero) 
                     {
                         targetRect.w = 1; targetRect.h = 1;
-                        targetRect.x = (int)entityData.position.X;
-                        targetRect.y = (int)entityData.position.Y;
+                        targetRect.x = GetPx(entityData.position.X);
+                        targetRect.y = GetPy(entityData.position.Y);
 
                         if (Walker.Walkable(targetRect.x, targetRect.y))
                         {
@@ -158,16 +167,39 @@ namespace BOIDSimulator.Renderer
                     }
                     else
                     {
-                        targetRect.x = (int)entityData.position.X;
-                        targetRect.y = (int)entityData.position.Y;
-                        targetRect.w = (int)renderComponent.width;
-                        targetRect.h = (int)renderComponent.height;
+                        targetRect.x = GetPx(entityData.position.X);
+                        targetRect.y = GetPy(entityData.position.Y);
+                        targetRect.w = (int)(renderComponent.width * Camera.zoom);
+                        targetRect.h = (int)(renderComponent.height * Camera.zoom);
                         SDL_RenderCopyEx(SDLRenderer, renderComponent.image, IntPtr.Zero, ref targetRect, renderComponent.angle, IntPtr.Zero, SDL_RendererFlip.SDL_FLIP_NONE);
                     }
                 }
                 entityDrawRequests.Clear();
             }
         }
+
+
+
+
+        private static int GetPx(float x)
+        {
+            return (int)(Camera.zoom * (x - Camera.x));
+        }
+        private static int GetPy(float y)
+        {
+            return (int)(Camera.zoom * (y - Camera.y));
+        }
+
+
+
+
+
+
+
+
+
+
+        // <<Requests>> //
         public static void RequestDrawGrid(int gridX, int gridY)
         {
             lock (gridDrawRequest)

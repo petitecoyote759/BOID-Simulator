@@ -172,6 +172,7 @@ namespace BOIDSimulator.Renderer
             while (Running)
             {
                 dt = GetDt(ref LFT, out dtMs);
+                Handler.HandleEvents(dt);
                 if (paused) { Thread.Sleep(10); continue; } // update LFT before skipping to avoid issues when unpausing
                 if (dtMs < minMsPerFrame) { Thread.Sleep((int)(minMsPerFrame - dtMs)); } // caps the fps to a reasonable amount.
 
