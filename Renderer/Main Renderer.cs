@@ -171,7 +171,19 @@ namespace BOIDSimulator.Renderer
                         targetRect.y = GetPy(entityData.position.Y);
                         targetRect.w = (int)(renderComponent.width * Camera.zoom);
                         targetRect.h = (int)(renderComponent.height * Camera.zoom);
+                        byte oldAlpha = 0;
+                        bool notWalkable = !Walker.Walkable((int)entityData.position.X, (int)entityData.position.Y);
+                        if (notWalkable)
+                        {
+                            SDL_GetTextureAlphaMod(renderComponent.image, out oldAlpha);
+                            SDL_SetTextureAlphaMod(renderComponent.image, 40);
+                        }
                         SDL_RenderCopyEx(SDLRenderer, renderComponent.image, IntPtr.Zero, ref targetRect, renderComponent.angle, IntPtr.Zero, SDL_RendererFlip.SDL_FLIP_NONE);
+                    
+                        if (notWalkable)
+                        {
+                            SDL_SetTextureAlphaMod(renderComponent.image, oldAlpha);
+                        }
                     }
                 }
                 entityDrawRequests.Clear();
