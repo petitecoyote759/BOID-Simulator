@@ -16,6 +16,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="Walker Temp.png" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Include="NaturioBoid.cs" />
   </ItemGroup>
 
@@ -27,6 +31,19 @@
     <PackageReference Include="ShortTools.MagicContainer" Version="1.0.3.2" />
     <PackageReference Include="ShortTools.Perlin" Version="1.0.1" />
     <PackageReference Include="ShortTools.PlanetaryForge" Version="1.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="NewFolder\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Fonts\Aller_Bd.ttf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Images\Walker Scarab.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>
