@@ -123,6 +123,7 @@ namespace BOIDSimulator.ECS_Components
                 // <<Generate New Path>> //
                 if (path is null || path.Count == 0)
                 {
+                    ECSHandler.debugger.AddLog($"Creating new path...", WarningLevel.Debug);
                     // create new path if none there
                     path = pather.GetPath(tileX, tileY, targetX, targetY);
                     if (path is null || path.Count == 0) 
