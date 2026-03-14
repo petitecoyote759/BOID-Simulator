@@ -191,6 +191,13 @@ namespace BOIDSimulator.Renderer
             // <<FPS Drawing>> //
             Write(0, 0, 20, 30, currentFPS.ToString());
             Write(0, 40, 20, 30, ECSHandler.currentFPS.ToString());
+            int topLeftX = (int)(Camera.x / drawGridTileSize);
+            int topLeftY = (int)(Camera.y / drawGridTileSize);
+            // refresh that area to make sure it renders text correctly
+            gridDrawRequest.Add((topLeftX, topLeftY));
+            gridDrawRequest.Add((topLeftX + 1, topLeftY));
+            gridDrawRequest.Add((topLeftX, topLeftY + 1));
+            gridDrawRequest.Add((topLeftX + 1, topLeftY + 1));
         }
 
 
