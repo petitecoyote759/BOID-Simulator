@@ -20,6 +20,8 @@ namespace BOIDSimulator.ECS_Components
             // And avoid walls
             Vector2 position = Me.position;
 
+            ECSHandler.GetEntityComponent(uid, out EC_Render renderComponent);
+
             int tileX = Me.tileX;
             int tileY = Me.tileY;
 
@@ -30,11 +32,15 @@ namespace BOIDSimulator.ECS_Components
             {
                 Vector2 step = Vector2.Normalize(new Vector2(targetX, targetY) - position) * followerSpeed * dt; // the distance to step.
                 Me.position += step;
+                renderComponent.angle = MathF.Atan2(step.X, step.Y) * 180f / MathF.PI;
             }
             else
             {
                 FollowerFollow(boidGrid, gridSize, dt, gridX, gridY, uid, ref Me);
+                renderComponent.angle = MathF.Atan2(velocity.X, velocity.Y) * 180f / MathF.PI;
             }
+
+            ECSHandler.SetEntitiyComponent(uid, renderComponent);
 
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

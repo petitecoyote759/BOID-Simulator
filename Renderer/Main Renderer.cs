@@ -66,10 +66,23 @@ namespace BOIDSimulator.Renderer
 
             SDL_image.IMG_SavePNG(surface, "Test.png");
             mapTexture = SDL_CreateTextureFromSurface(SDLRenderer, surface);
+            SDL_SetTextureBlendMode(mapTexture, SDL_BlendMode.SDL_BLENDMODE_NONE);
 
             textures.Add(mapTexture);
 
             SDL_FreeSurface(surface);
+
+
+            // <<Full Map Render>> //
+            int width = (int)MathF.Ceiling(screenWidth / (float)drawGridTileSize);
+            int height = (int)MathF.Ceiling(screenHeight / (float)drawGridTileSize);
+            for (int x = 0; x < width; x++)
+            {
+                for (int y = 0; y < height; y++)
+                {
+                    gridDrawRequest.Add((x, y));
+                }
+            }
         }
 
 
@@ -80,6 +93,23 @@ namespace BOIDSimulator.Renderer
         static HashSet<int> entityDrawRequests = new HashSet<int>();
         private static void Render(float dt)
         {
+            if (General.refresh)
+            {
+                // <<Full Map Render>> //
+                int width = (int)MathF.Ceiling(screenWidth / (float)drawGridTileSize);
+                int height = (int)MathF.Ceiling(screenHeight / (float)drawGridTileSize);
+                for (int x = 0; x < width; x++)
+                {
+                    for (int y = 0; y < height; y++)
+                    {
+                        gridDrawRequest.Add((x, y));
+                    }
+                }
+                General.refresh = false;
+            }
+
+
+
             Handler.HandleEvents();
             ECSHandler.DoEntityRenderTasks(dt);
 
@@ -90,6 +120,7 @@ namespace BOIDSimulator.Renderer
             targetRect.w = drawGridTileSize;
             targetRect.h = drawGridTileSize;
 
+            SDL_SetTextureBlendMode(screenTexture, SDL_BlendMode.SDL_BLENDMODE_NONE);
             lock (gridDrawRequest)
             {
                 foreach ((int, int) coordinate in gridDrawRequest)
@@ -99,6 +130,7 @@ namespace BOIDSimulator.Renderer
                 }
                 gridDrawRequest.Clear();
             }
+            SDL_SetTextureBlendMode(screenTexture, SDL_BlendMode.SDL_BLENDMODE_BLEND);
             lock (entityDrawRequests)
             {
                 foreach (int uid in entityDrawRequests)
@@ -113,7 +145,24 @@ namespace BOIDSimulator.Renderer
                         targetRect.x = (int)entityData.position.X;
                         targetRect.y = (int)entityData.position.Y;
 
+                        if (Walker.Walkable(targetRect.x, targetRect.y))
+                        {
+                            SDL_SetRenderDrawColor(SDLRenderer, 60, 10, 70, 255);
+                        }
+                        else
+                        {
+                            SDL_SetRenderDrawColor(SDLRenderer, 60, 10, 70, 20);
+                        }
+
                         SDL_RenderDrawPoint(SDLRenderer, targetRect.x, targetRect.y);
+                    }
+                    else
+                    {
+                        targetRect.x = (int)entityData.position.X;
+                        targetRect.y = (int)entityData.position.Y;
+                        targetRect.w = (int)renderComponent.width;
+                        targetRect.h = (int)renderComponent.height;
+                        SDL_RenderCopyEx(SDLRenderer, renderComponent.image, IntPtr.Zero, ref targetRect, renderComponent.angle, IntPtr.Zero, SDL_RendererFlip.SDL_FLIP_NONE);
                     }
                 }
                 entityDrawRequests.Clear();

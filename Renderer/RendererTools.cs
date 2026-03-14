@@ -36,7 +36,7 @@ namespace BOIDSimulator.Renderer
         // <<Drawing Variables>> //
         private static SDL_Rect targetRect = new SDL_Rect();
         private static SDL_Rect srcRect = new SDL_Rect();
-        private static readonly Dictionary<string, IntPtr> images = new Dictionary<string, nint>();
+        public static readonly Dictionary<string, IntPtr> images = new Dictionary<string, nint>();
         /// <summary>
         /// Other unmanaged textures apart from the images to be cleaned up when renderer is disposed.
         /// </summary>
@@ -143,7 +143,6 @@ namespace BOIDSimulator.Renderer
                 screenWidth,
                 screenHeight);
             textures.Add(screenTexture);
-            
 
 
             setupComplete.Set();
@@ -185,6 +184,26 @@ namespace BOIDSimulator.Renderer
                 SDL_SetRenderTarget(SDLRenderer, IntPtr.Zero); // reset to screen
 
                 SDL_RenderCopy(SDLRenderer, screenTexture, IntPtr.Zero, IntPtr.Zero);
+
+                // <<Grid Render>> //
+                if (General.renderLines)
+                {
+                    SDL_SetRenderDrawColor(SDLRenderer, 0, 0, 0, 255);
+                    int width = (int)MathF.Ceiling(screenWidth / (float)drawGridTileSize);
+                    int height = (int)MathF.Ceiling(screenHeight / (float)drawGridTileSize);
+                    for (int x = 0; x < width; x++)
+                    {
+                        SDL_RenderDrawLine(SDLRenderer, x * drawGridTileSize, 0, x * drawGridTileSize, screenHeight);
+                    }
+                    for (int y = 0; y < height; y++)
+                    {
+                        SDL_RenderDrawLine(SDLRenderer, 0, y * drawGridTileSize, screenWidth, y * drawGridTileSize);
+                    }
+                    SDL_SetRenderDrawColor(SDLRenderer, 60, 10, 70, 255);
+                }
+
+
+
 
                 SDL_RenderPresent(SDLRenderer);
             }
@@ -255,6 +274,7 @@ namespace BOIDSimulator.Renderer
 
 
                 images.Add(imageName, imagePointer);
+                debugger.AddLog($"Loaded \"{imageName}\" : {imagePointer}", WarningLevel.Info);
             }
         }
 

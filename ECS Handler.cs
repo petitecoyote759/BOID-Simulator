@@ -139,6 +139,7 @@ namespace BOIDSimulator
                 {
                     RendererTools.RequestDrawGrid(coordinate.Item1, coordinate.Item2);
                 }
+                updatedGrids.Clear();
             }
         }
 

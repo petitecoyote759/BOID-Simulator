@@ -35,7 +35,7 @@ namespace BOIDSimulator
             ECSHandler.ECSs[typeof(EC_Despawning)][uid] = new EC_Despawning(deletionRadius);
             ECSHandler.ECSs[typeof(EC_BoidLogic)][uid] = new EC_BoidLogic();
             ECSHandler.ECSs[typeof(EC_PathFinding)][uid] = new EC_PathFinding(Walkable);
-            ECSHandler.ECSs[typeof(EC_Render)][uid] = new EC_Render(IntPtr.Zero);
+            ECSHandler.ECSs[typeof(EC_Render)][uid] = new EC_Render(@"Images\Walker Scarab.png", 8, 10);
             ECSHandler.ECSs[typeof(EC_SpawnedLogic)][uid] = new EC_SpawnedLogic(uid, spawnerUid);
 
             // <<Disable the EAF modules used for leaders>> //
@@ -49,7 +49,7 @@ namespace BOIDSimulator
         }
 
 
-        private static bool Walkable(int x, int y)
+        public static bool Walkable(int x, int y)
         {
             // <<Bounds Checks>> //
             if (Map.tileMap is null) { return false; }

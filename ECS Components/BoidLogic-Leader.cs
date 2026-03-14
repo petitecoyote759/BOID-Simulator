@@ -51,6 +51,10 @@ namespace BOIDSimulator.ECS_Components
 
             // Update the pathfinding module
             ECSHandler.ECSs[typeof(EC_PathFinding)][uid] = pathFinding;
+
+            ECSHandler.GetEntityComponent(uid, out EC_Render renderComponent);
+            renderComponent.angle = MathF.Atan2(step.X, step.Y) * 180 / MathF.PI;
+            ECSHandler.SetEntitiyComponent(uid, renderComponent);
         }
     }
 }

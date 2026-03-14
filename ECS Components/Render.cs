@@ -18,7 +18,10 @@ namespace BOIDSimulator.ECS_Components
 
         // <<Public Variables> //
         public double angle;
-        public IntPtr image;
+        public IntPtr image => RendererTools.images[imageName];
+        string imageName;
+        public float width;
+        public float height;
 
         public bool Active { get => active; set => active = value; }
         private bool active = true;
@@ -31,10 +34,11 @@ namespace BOIDSimulator.ECS_Components
 
 
 
-        public EC_Render(IntPtr image, double angle = 0d)
+        public EC_Render(string imageName, int width, int height)
         {
-            this.image = image;
-            this.angle = angle;
+            this.imageName = imageName;
+            this.width = width;
+            this.height = height;
         }
 
         public void Action(float dt, int uid)
@@ -45,14 +49,15 @@ namespace BOIDSimulator.ECS_Components
             int gridX = Me.Value.tileX / RendererTools.drawGridTileSize;
             int gridY = Me.Value.tileY / RendererTools.drawGridTileSize;
 
-            lock (ECSHandler.updatedGrids)
+            int gridImageSize = (int)MathF.Ceiling((width + 1) / (float)(2 * RendererTools.drawGridTileSize));
+            for (int x = gridX - gridImageSize; x <= gridX + gridImageSize; x++)
             {
-                if (gridX != prevGridX || gridY != prevGridY)
+                for (int y = gridY - gridImageSize; y <= gridY + gridImageSize; y++)
                 {
-                    ECSHandler.updatedGrids.Add((prevGridX, prevGridY));
+                    RendererTools.RequestDrawGrid(x, y);
                 }
-                ECSHandler.updatedGrids.Add((gridX, gridY));
             }
+
             RendererTools.RequestEntityDraw(gridX, gridY, uid);
         }
 
@@ -66,7 +71,7 @@ namespace BOIDSimulator.ECS_Components
 
             lock (ECSHandler.updatedGrids)
             {
-                ECSHandler.updatedGrids.Add((gridX, gridY));
+                RendererTools.RequestDrawGrid(gridX, gridY);
             }
         }
     }
