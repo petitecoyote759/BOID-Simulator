@@ -31,6 +31,7 @@ namespace BOIDSimulator.Renderer
         private static int screenWidth;
         public static int ScreenHeight => screenHeight;
         private static int screenHeight;
+        private static IntPtr screenTexture = IntPtr.Zero;
 
         // <<Drawing Variables>> //
         private static SDL_Rect targetRect = new SDL_Rect();
@@ -134,6 +135,17 @@ namespace BOIDSimulator.Renderer
 
             SDL_SetRenderDrawColor(SDLRenderer, 60, 10, 70, 255); // set default colour to purple
 
+
+            screenTexture = SDL_CreateTexture(
+                SDLRenderer,
+                SDL_PIXELFORMAT_RGBA8888,
+                (int)SDL_TextureAccess.SDL_TEXTUREACCESS_TARGET,
+                screenWidth,
+                screenHeight);
+            textures.Add(screenTexture);
+            
+
+
             setupComplete.Set();
 
 
@@ -168,8 +180,11 @@ namespace BOIDSimulator.Renderer
 
                 SDL_RenderClear(SDLRenderer);
 
+                SDL_SetRenderTarget(SDLRenderer, screenTexture);
                 Render(dt);
+                SDL_SetRenderTarget(SDLRenderer, IntPtr.Zero); // reset to screen
 
+                SDL_RenderCopy(SDLRenderer, screenTexture, IntPtr.Zero, IntPtr.Zero);
 
                 SDL_RenderPresent(SDLRenderer);
             }
