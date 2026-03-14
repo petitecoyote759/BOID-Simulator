@@ -47,7 +47,7 @@ namespace BOIDSimulator.ECS_Components
                 leaderReference is null || 
                 leaderReference.closed ||
                 IsLeader(leaderReference.targetUid) == false || 
-                DateTimeOffset.Now.ToUnixTimeMilliseconds() - leaderFollowStartTime > minLeaderFollowDuration)
+                ECSHandler.LFT - leaderFollowStartTime > minLeaderFollowDuration)
             {
                 GetNewLeader(gridX, gridY, ref Me, uid);
             }
@@ -143,6 +143,7 @@ namespace BOIDSimulator.ECS_Components
             // closest boid, should always be one due to DLA
             if (leaderQueue.Count == 0) { ECSHandler.debugger.AddLog($"Could not find a leader in the area?", WarningLevel.Warning); return; }
             leaderReference = new EntityReference(leaderQueue.Dequeue(), uid);
+            leaderFollowStartTime = ECSHandler.LFT;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
