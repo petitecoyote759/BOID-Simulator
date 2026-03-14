@@ -83,18 +83,6 @@ namespace BOIDSimulator.Renderer
             Handler.HandleEvents();
             ECSHandler.DoEntityRenderTasks(dt);
 
-            srcRect.w = screenWidth;
-            srcRect.h = screenHeight;
-            srcRect.x = 0;
-            srcRect.y = 0;
-
-            targetRect.w = screenWidth;
-            targetRect.h = screenHeight;
-            targetRect.x = 0;
-            targetRect.y = 0;
-            SDL_RenderCopyEx(SDLRenderer, mapTexture, ref srcRect, ref targetRect, 0, 0, SDL_RendererFlip.SDL_FLIP_NONE);
-
-
             srcRect.w = drawGridTileSize;
             srcRect.h = drawGridTileSize;
             srcRect.x = 0; srcRect.y = 0;
@@ -107,7 +95,7 @@ namespace BOIDSimulator.Renderer
                 foreach ((int, int) coordinate in gridDrawRequest)
                 {
                     srcRect.x = coordinate.Item1 * drawGridTileSize; srcRect.y = coordinate.Item2 * drawGridTileSize;
-                    SDL_RenderCopy(SDLRenderer, mapTexture, ref srcRect, ref targetRect);
+                    SDL_RenderCopy(SDLRenderer, mapTexture, ref srcRect, ref srcRect);
                 }
                 gridDrawRequest.Clear();
             }
