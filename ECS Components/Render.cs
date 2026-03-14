@@ -18,8 +18,8 @@ namespace BOIDSimulator.ECS_Components
 
         // <<Public Variables> //
         public double angle;
-        public IntPtr image => RendererTools.images[imageName];
-        string imageName;
+        public IntPtr image => imageName.Length == 0 ? IntPtr.Zero : RendererTools.images[imageName];
+        string imageName = "";
         public float width;
         public float height;
 
@@ -33,7 +33,7 @@ namespace BOIDSimulator.ECS_Components
 
 
 
-
+        public EC_Render() { imageName = ""; }
         public EC_Render(string imageName, int width, int height)
         {
             this.imageName = imageName;
